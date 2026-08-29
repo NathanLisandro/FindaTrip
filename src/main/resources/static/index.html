@@ -1,127 +1,54 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Smart Travel Value Analyzer</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>FindaTrip — o pacote que vale a pena</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
   <main class="shell">
-    <nav class="topbar" aria-label="Primary navigation">
-      <a class="brand" href="#hero" aria-label="Smart Travel home">
-        <span class="brand-mark">✦</span>
-        <span>SmartTravel</span>
-      </a>
-      <div class="nav-links">
-        <a href="#analyzer">Analyzer</a>
-        <a href="#insights">Insights</a>
-        <a href="#packages">Packages</a>
-      </div>
-    </nav>
+    <div id="demo-banner" class="demo-banner" hidden>
+      Dados de demonstração — os preços não são reais.
+    </div>
 
-    <section id="hero" class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">Real travel value, not teaser prices</p>
-        <h1>Find the trip that is actually worth it.</h1>
-        <p class="hero-text">Normalize baggage, resort fees, airport pickup costs and full car insurance before comparing offers. Then rank every bundle with historical trends, quality, and convenience.</p>
-        <div class="hero-actions">
-          <a class="button primary" href="#analyzer">Analyze my trip</a>
-          <a class="button ghost" href="#insights">See the scoring model</a>
-        </div>
-      </div>
-      <aside class="value-card" aria-label="Example value score">
-        <div class="score-ring"><span>91</span><small>/100</small></div>
-        <h2>BEST_VALUE_OVERALL</h2>
-        <p>Flight + hotel + car bundle after hidden cost normalization.</p>
-        <dl>
-          <div><dt>Hidden costs found</dt><dd>$274</dd></div>
-          <div><dt>Historical signal</dt><dd>Excellent deal</dd></div>
-          <div><dt>Convenience</dt><dd>Direct flight</dd></div>
-        </dl>
-        <div class="mini-map" aria-label="Route preview from New York to Lisbon">
-          <span>NYC</span><i></i><span>LIS</span>
-        </div>
-      </aside>
+    <h1>Para onde e quando?</h1>
+
+    <form id="search-form" class="search-card">
+      <label>Origem <input name="origin" value="CWB" maxlength="3" required /></label>
+      <label>Destino <input name="destination" value="REC" maxlength="3" required /></label>
+      <label>Ida <input name="departureDate" type="date" required /></label>
+      <label>Volta <input name="returnDate" type="date" required /></label>
+      <label>Viajantes <input name="travelers" type="number" min="1" value="2" required /></label>
+      <label class="check"><input name="checkedBagRequested" type="checkbox" checked /> Bagagem despachada</label>
+      <label class="check"><input name="carRequired" type="checkbox" /> Preciso de carro</label>
+      <label class="check"><input name="flexibleDates" type="checkbox" /> Datas flexíveis (±3 dias)</label>
+      <button type="submit">Buscar</button>
+    </form>
+
+    <section id="progress" class="progress" hidden>
+      <h2>Buscando…</h2>
+      <ul id="sources"></ul>
     </section>
 
-    <section id="analyzer" class="panel analyzer-grid">
-      <form id="search-form" class="search-card">
-        <div class="section-heading">
-          <p class="eyebrow">Trip analyzer</p>
-          <h2>Compare normalized bundles</h2>
-        </div>
-        <div class="form-grid">
-          <label>Origin<input name="origin" value="NYC" maxlength="3" required /></label>
-          <label>Destination<input name="destination" value="LIS" maxlength="3" required /></label>
-          <label>Departure<input name="departureDate" type="date" required /></label>
-          <label>Return<input name="returnDate" type="date" required /></label>
-          <label>Travelers<input name="travelers" type="number" min="1" value="2" required /></label>
-          <label class="checkbox"><input name="checkedBagRequested" type="checkbox" checked /> Include checked bags</label>
-          <label class="checkbox"><input name="carRequired" type="checkbox" checked /> Include rental car</label>
-        </div>
-        <button class="button primary full" type="submit">Calculate best value</button>
-      </form>
-
-      <div id="result-panel" class="results-card" aria-live="polite">
-        <div class="section-heading row-heading">
-          <div>
-            <p class="eyebrow">Recommendations</p>
-            <h2>Top 3 packages</h2>
-          </div>
-          <span class="live-badge">Live model</span>
-        </div>
-        <div id="summary-strip" class="summary-strip"></div>
-        <div id="packages" class="package-list"></div>
-      </div>
+    <section id="neighborhoods" class="neighborhoods" hidden>
+      <h2>Em que parte de <span id="destination-label"></span>?</h2>
+      <div id="neighborhood-chips" class="chips"></div>
     </section>
 
-    <section class="dashboard" aria-label="Deal intelligence dashboard">
-      <div class="trend-card">
-        <div class="section-heading">
-          <p class="eyebrow">Price intelligence</p>
-          <h2>Trend snapshot</h2>
-        </div>
-        <div class="chart" aria-label="Normalized price trend chart">
-          <span style="height:52%"></span>
-          <span style="height:66%"></span>
-          <span style="height:43%"></span>
-          <span style="height:78%"></span>
-          <span style="height:37%"></span>
-          <span style="height:58%"></span>
-          <span style="height:31%"></span>
-        </div>
-        <p class="trend-note">Current normalized package price is tracking below the route mean after baggage, resort fees, and full rental protection.</p>
-      </div>
-      <div class="itinerary-card">
-        <p class="eyebrow">Smart itinerary</p>
-        <ol>
-          <li><strong>Direct outbound flight</strong><span>No airport change, no overnight layover</span></li>
-          <li><strong>Walkable boutique stay</strong><span>Breakfast and flexible cancellation included</span></li>
-          <li><strong>Terminal pickup car</strong><span>Zero-deductible coverage normalized</span></li>
-        </ol>
-      </div>
+    <section id="filters" class="filters" hidden>
+      <label>Preço máximo <input id="f-maxPrice" type="number" min="0" step="50" /></label>
+      <label>Nota mínima <input id="f-minRating" type="number" min="0" max="10" step="0.5" /></label>
+      <label class="check"><input id="f-directFlightOnly" type="checkbox" /> Só voo direto</label>
+      <label class="check"><input id="f-breakfastIncluded" type="checkbox" /> Café da manhã</label>
+      <label class="check"><input id="f-freeCancellation" type="checkbox" /> Cancelamento grátis</label>
     </section>
 
-    <section id="insights" class="insights">
-      <article>
-        <span class="icon">🧳</span>
-        <h3>Hidden-cost normalizer</h3>
-        <p>Flights include mandatory taxes and selected bags. Cars are compared only after adding zero-deductible coverage and airport pickup costs.</p>
-      </article>
-      <article>
-        <span class="icon">📈</span>
-        <h3>Price trend engine</h3>
-        <p>Current offers are benchmarked against historical mean, median and volatility so genuine deals rise to the top.</p>
-      </article>
-      <article>
-        <span class="icon">⭐</span>
-        <h3>Bayesian quality</h3>
-        <p>Quality scoring discounts suspiciously small review samples and rewards reliable providers with proven reputation.</p>
-      </article>
+    <p id="message" class="message" hidden></p>
+    <section id="packages" class="packages"></section>
+    <section id="date-options" class="date-options" hidden>
+      <h2>Mudando a data</h2>
+      <table id="date-table"></table>
     </section>
   </main>
   <script src="/app.js"></script>
