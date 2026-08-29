@@ -19,6 +19,7 @@ export function useSearch() {
     if (!idRef.current) return null;
     const params = new URLSearchParams();
     Object.entries(filtros || {}).forEach(([chave, valor]) => {
+      if (Array.isArray(valor)) { valor.forEach((item) => params.append(chave, item)); return; }
       if (valor !== '' && valor !== false && valor != null) params.set(chave, valor);
     });
     const resposta = await fetch(`/api/search/${idRef.current}?${params}`);

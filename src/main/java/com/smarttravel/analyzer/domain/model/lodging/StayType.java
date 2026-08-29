@@ -42,10 +42,19 @@ public enum StayType {
         var limpo = semAcento(texto);
         for (var tipo : ORDEM) {
             for (var pista : PISTAS.get(tipo)) {
-                if (limpo.contains(pista)) return tipo;
+                if (contemPalavra(limpo, pista)) return tipo;
             }
         }
         return OUTRO;
+    }
+
+    /**
+     * Palavra inteira, nao pedaco: "Village" contem "villa" e fazia um estudio
+     * ser classificado como casa inteira, escondendo-o do filtro certo.
+     */
+    private static boolean contemPalavra(String texto, String palavra) {
+        return java.util.regex.Pattern.compile("\\b" + java.util.regex.Pattern.quote(palavra) + "\\b")
+            .matcher(texto).find();
     }
 
     private static String semAcento(String valor) {

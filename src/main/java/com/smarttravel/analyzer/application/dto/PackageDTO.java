@@ -12,5 +12,6 @@ public record PackageDTO(String id, PackageBundleType recommendationType, BigDec
                          String departureTime, String arrivalTime, String duration,
                          String lodgingName, String neighborhood, double lodgingRating, int lodgingReviews,
                          String lodgingSource, String image,
+                         String stayType, String stayTypeLabel, int travelers,
                          String carSupplier, String carCategory,
                          List<BookingLinkDTO> links) {}

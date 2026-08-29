@@ -14,5 +14,7 @@ seletores:
   periodo: "[data-testid='price-for-x-nights']"
   link: "[data-testid='title-link']"
   imagem: "[data-testid='image']"
+  # "Estudio inteiro", "Apartamento com 1 quarto": o tipo do lugar, sem o resto do card
+  unidade: "[data-testid='property-card-unit-configuration']"
 _meta:
   verificado_em: 2026-08-29

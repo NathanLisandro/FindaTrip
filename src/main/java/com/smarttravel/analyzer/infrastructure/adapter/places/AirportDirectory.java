@@ -19,6 +19,15 @@ import org.springframework.stereotype.Component;
 @Component
 public class AirportDirectory {
 
+    /** Como as pessoas realmente digitam. Sem isto, "floripa" nao acha nada. */
+    private static final java.util.Map<String, String> APELIDOS = java.util.Map.of(
+        "floripa", "florianopolis",
+        "sampa", "guarulhos",
+        "sao paulo", "guarulhos",
+        "bh", "belo horizonte",
+        "rio", "rio de janeiro",
+        "brasilia", "brasilia");
+
     private final List<Airport> aeroportos;
 
     public AirportDirectory() {
@@ -33,7 +42,7 @@ public class AirportDirectory {
 
     public List<Airport> search(String termo, int limite) {
         if (termo == null || termo.isBlank()) return List.of();
-        var alvo = semAcento(termo);
+        var alvo = APELIDOS.getOrDefault(semAcento(termo), semAcento(termo));
         return aeroportos.stream()
             .filter(a -> a.search().contains(alvo))
             // Codigo exato primeiro: quem digita "GRU" quer Guarulhos, nao um nome que contenha "gru".

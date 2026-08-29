@@ -46,6 +46,9 @@ public class DomainToDtoMapper {
             lodging.rating().reviewCount(),
             lodging.source(),
             imagem(lodging),
+            lodging.type().name(),
+            lodging.type().rotulo(),
+            criteria.travelers(),
             travelPackage.hasCar() ? travelPackage.car().offer().supplier() : null,
             travelPackage.hasCar() ? travelPackage.car().offer().category().name() : null,
             links(travelPackage, criteria));

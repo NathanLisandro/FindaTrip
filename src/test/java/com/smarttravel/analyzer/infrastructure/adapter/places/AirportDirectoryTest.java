@@ -32,6 +32,13 @@ class AirportDirectoryTest {
             .satisfies(a -> assertThat(a.code()).isEqualTo("GRU"));
     }
 
+    @Test void understandsTheNicknamesPeopleActuallyType() {
+        // Ninguem digita "Florianopolis" inteiro; digita "floripa".
+        assertThat(diretorio.search("floripa", 8)).extracting(Airport::code).contains("FLN");
+        assertThat(diretorio.search("sampa", 8)).extracting(Airport::code).contains("GRU");
+        assertThat(diretorio.search("rio de janeiro", 8)).extracting(Airport::code).contains("GIG");
+    }
+
     @Test void respectsTheRequestedLimit() {
         assertThat(diretorio.search("a", 5)).hasSizeLessThanOrEqualTo(5);
     }
