@@ -13,6 +13,12 @@ public class BeanConfig {
     @Bean PackageFilterDomainService packageFilterDomainService() { return new PackageFilterDomainService(); }
     @Bean PackageExplanationDomainService packageExplanationDomainService() { return new PackageExplanationDomainService(); }
 
+    @Bean java.util.concurrent.Executor searchExecutor() {
+        var executor = new org.springframework.core.task.SimpleAsyncTaskExecutor("busca-");
+        executor.setConcurrencyLimit(4);
+        return executor;
+    }
+
     @Bean PackageAssemblerDomainService packageAssemblerDomainService(CostNormalizerDomainService normalizer, ValueScoringDomainService scoring, PriceTrendDomainService trends) {
         return new PackageAssemblerDomainService(normalizer, scoring, trends);
     }

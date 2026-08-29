@@ -1,0 +1,93 @@
+package com.smarttravel.analyzer.presentation.rest;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@SpringBootTest
+class SearchControllerTest {
+
+    @Autowired WebApplicationContext context;
+
+    private MockMvc mockMvc() { return MockMvcBuilders.webAppContextSetup(context).build(); }
+
+    private static final String BODY = """
+        {"origin":"CWB","destination":"REC","departureDate":"2030-11-10","returnDate":"2030-11-13",
+         "travelers":2,"checkedBagRequested":true,"carRequired":false,"flexibleDates":false}""";
+
+    private String startSearch() throws Exception {
+        var response = mockMvc().perform(post("/api/search").contentType(MediaType.APPLICATION_JSON).content(BODY))
+            .andExpect(status().isAccepted())
+            .andExpect(jsonPath("$.searchId").isNotEmpty())
+            .andReturn().getResponse().getContentAsString();
+        return response.replaceAll(".*\"searchId\"\\s*:\\s*\"([^\"]+)\".*", "$1");
+    }
+
+    @Test void startingASearchReturnsAnIdImmediately() throws Exception {
+        org.assertj.core.api.Assertions.assertThat(startSearch()).isNotBlank();
+    }
+
+    @Test void theResultCarriesThreeRecommendationsAndTheDemoFlag() throws Exception {
+        var id = startSearch();
+        mockMvc().perform(get("/api/search/{id}", id))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.demo").value(true))
+            .andExpect(jsonPath("$.packages.length()").value(3))
+            .andExpect(jsonPath("$.packages[0].realCost").isNotEmpty())
+            .andExpect(jsonPath("$.packages[0].advertisedPrice").isNotEmpty())
+            .andExpect(jsonPath("$.packages[0].why").isNotEmpty())
+            .andExpect(jsonPath("$.packages[0].lodgingName").isNotEmpty())
+            .andExpect(jsonPath("$.packages[0].neighborhood").isNotEmpty())
+            .andExpect(jsonPath("$.packages[0].links.length()").value(2));
+    }
+
+    @Test void theResultListsTheNeighborhoodsFoundWithCountAndCheapestPrice() throws Exception {
+        var id = startSearch();
+        mockMvc().perform(get("/api/search/{id}", id))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.neighborhoods.length()").value(org.hamcrest.Matchers.greaterThan(1)))
+            .andExpect(jsonPath("$.neighborhoods[0].neighborhood").isNotEmpty())
+            .andExpect(jsonPath("$.neighborhoods[0].packages").isNumber())
+            .andExpect(jsonPath("$.neighborhoods[0].cheapest").isNotEmpty());
+    }
+
+    @Test void filteringByNeighborhoodKeepsTheNeighborhoodOptionsIntact() throws Exception {
+        var id = startSearch();
+        mockMvc().perform(get("/api/search/{id}", id).param("neighborhood", "bairro-que-nao-existe"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.packages.length()").value(0))
+            .andExpect(jsonPath("$.neighborhoods.length()").value(org.hamcrest.Matchers.greaterThan(1)));
+    }
+
+    @Test void everySourceIsReportedWithItsHealth() throws Exception {
+        var id = startSearch();
+        mockMvc().perform(get("/api/search/{id}", id))
+            .andExpect(jsonPath("$.sources.length()").value(2))
+            .andExpect(jsonPath("$.sources[0].health").value("OK"));
+    }
+
+    @Test void anImpossibleFilterReturnsAnEmptyPackageListNotAnError() throws Exception {
+        var id = startSearch();
+        mockMvc().perform(get("/api/search/{id}", id).param("maxPrice", "1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.packages.length()").value(0));
+    }
+
+    @Test void anUnknownSearchIdReturnsNotFound() throws Exception {
+        mockMvc().perform(get("/api/search/{id}", "does-not-exist")).andExpect(status().isNotFound());
+    }
+
+    @Test void aRequestWithoutOriginIsRejected() throws Exception {
+        mockMvc().perform(post("/api/search").contentType(MediaType.APPLICATION_JSON)
+                .content(BODY.replace("\"origin\":\"CWB\"", "\"origin\":\"\"")))
+            .andExpect(status().isBadRequest());
+    }
+}
