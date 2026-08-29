@@ -1,0 +1,13 @@
+nome: decolar
+tipo: spa
+# A Decolar responde 403 a quem pede esta URL direto. Entrar por outra pagina e navegar
+# pelo lado do cliente passa — e como um usuario de verdade chega ate aqui.
+entrada: "https://www.decolar.com/voos/"
+url_busca: "https://www.decolar.com/shop/flights/results/roundtrip/{origem}/{destino}/{ida}/{volta}/{adultos}/0/0"
+espera: ".itineraries-container"
+rate_limit_ms: 8000
+seletores:
+  card: ".itineraries-container.border-top-complete"
+  preco: ".fare.main-fare-big"
+_meta:
+  verificado_em: 2026-08-29

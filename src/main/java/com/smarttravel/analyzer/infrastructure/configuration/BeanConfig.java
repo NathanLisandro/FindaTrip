@@ -41,7 +41,10 @@ public class BeanConfig {
 
     @Profile("!test")
     @Bean FlightProviderPort flightProvider(PageFetcherPort fetcher, SiteConfigLoader loader) {
-        return new GoogleFlightsScraper(fetcher, loader.load(SCRAPERS).get("google-flights"));
+        var configs = loader.load(SCRAPERS);
+        return new CompositeFlightProvider(List.of(
+            new GoogleFlightsScraper(fetcher, configs.get("google-flights")),
+            new DecolarFlightScraper(fetcher, configs.get("decolar"))));
     }
 
     /** Nenhuma locadora foi raspada ainda: o carro segue simulado, e a tela avisa por fonte. */
