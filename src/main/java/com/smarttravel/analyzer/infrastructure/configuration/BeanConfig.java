@@ -10,4 +10,8 @@ public class BeanConfig {
     @Bean PackageBundlerDomainService packageBundlerDomainService() { return new PackageBundlerDomainService(); }
     @Bean ValueScoringDomainService valueScoringDomainService() { return new ValueScoringDomainService(); }
     @Bean CostNormalizerDomainService costNormalizerDomainService() { return new CostNormalizerDomainService(); }
+
+    @Bean PackageAssemblerDomainService packageAssemblerDomainService(CostNormalizerDomainService normalizer, ValueScoringDomainService scoring, PriceTrendDomainService trends) {
+        return new PackageAssemblerDomainService(normalizer, scoring, trends);
+    }
 }
