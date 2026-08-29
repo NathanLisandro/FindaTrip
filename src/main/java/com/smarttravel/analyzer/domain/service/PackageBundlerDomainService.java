@@ -32,9 +32,18 @@ public class PackageBundlerDomainService {
 
     private static void pick(List<TravelPackage> candidates, List<TravelPackage> chosen,
                              PackageBundleType type, java.util.function.Function<List<TravelPackage>, Optional<TravelPackage>> winner) {
-        var remaining = candidates.stream()
-            .filter(candidate -> chosen.stream().noneMatch(taken -> taken.id().equals(candidate.id())))
-            .toList();
+        var remaining = candidates.stream().filter(candidate -> isNew(chosen, candidate)).toList();
         winner.apply(remaining).ifPresent(pick -> chosen.add(pick.withRecommendationType(type)));
+    }
+
+    /**
+     * Um perfil so leva um pacote cuja HOSPEDAGEM ainda nao foi escolhida.
+     * Tres cards com o mesmo hotel nao sao tres opcoes: sao um card repetido tres vezes,
+     * ainda que o voo mude. A hospedagem e o que o usuario reconhece na tela.
+     */
+    private static boolean isNew(List<TravelPackage> chosen, TravelPackage candidate) {
+        return chosen.stream().noneMatch(taken ->
+            taken.id().equals(candidate.id())
+                || taken.lodging().offer().id().equals(candidate.lodging().offer().id()));
     }
 }
