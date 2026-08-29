@@ -37,11 +37,18 @@ class AirbnbScraperTest {
         assertThat(offers()).allSatisfy(offer -> assertThat(offer.nights()).isEqualTo(7));
     }
 
-    @Test void readsRatingAndReviewCountWhenTheListingHasThem() {
+    @Test void convertsTheFiveStarScaleToTheTenPointOneTheDomainUses() {
+        // O Airbnb pontua de 0 a 5 e o Booking de 0 a 10. Sem converter, um 4,92 excelente
+        // entraria no ranking como se fosse 4,92 de 10, ou seja, pessimo.
         assertThat(offers()).anySatisfy(offer -> {
-            assertThat(offer.rating().average()).isEqualTo(4.92);
+            assertThat(offer.rating().average()).isEqualTo(9.84);
             assertThat(offer.rating().reviewCount()).isEqualTo(88);
         });
+    }
+
+    @Test void noRatingEverExceedsTheTenPointScale() {
+        assertThat(offers()).allSatisfy(offer ->
+            assertThat(offer.rating().average()).isBetween(0.0, 10.0));
     }
 
     @Test void aListingWithoutReviewsScoresZeroInsteadOfAnInventedRating() {
