@@ -26,6 +26,7 @@ export function PackageCard({ pacote, destaque }) {
           <div>
             <h3>{pacote.lodgingName}</h3>
             <p className="cartao__local">
+              {pacote.stayTypeLabel && <span className="tipo">{pacote.stayTypeLabel}</span>}
               {pacote.neighborhood}
               <span className="ponto">·</span>
               <span className="fonte-tag">{pacote.lodgingSource}</span>
@@ -34,7 +35,10 @@ export function PackageCard({ pacote, destaque }) {
           <div className="cartao__preco">
             {oculto && <s>{brl(pacote.advertisedPrice)}</s>}
             <strong>{brl(pacote.realCost)}</strong>
-            <small>total, tudo somado</small>
+            <small>
+              total, tudo somado
+              {pacote.travelers > 1 && <> · {brl(pacote.realCost / pacote.travelers)} por pessoa</>}
+            </small>
           </div>
         </header>
 

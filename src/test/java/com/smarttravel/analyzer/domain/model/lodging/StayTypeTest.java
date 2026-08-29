@@ -42,6 +42,13 @@ class StayTypeTest {
         assertThat(StayType.fromText("Floripa Hostel Lagoa")).isEqualTo(StayType.HOSTEL);
     }
 
+    @Test void doesNotMatchATypeWordBuriedInsideAnotherWord() {
+        // "Village" contem "villa" e fazia um estudio virar "casa inteira".
+        assertThat(StayType.fromText("Confortável Studio - Village Ilha do Campeche")).isEqualTo(StayType.APARTAMENTO);
+        assertThat(StayType.fromText("Baleia Franca e Apart HS")).isEqualTo(StayType.APARTAMENTO);
+        assertThat(StayType.fromText("Casarão do Porto")).isEqualTo(StayType.OUTRO);
+    }
+
     @Test void doesNotGuessWhenNothingInTheNameSaysSo() {
         // Chutar tipo faz o filtro esconder opcao boa. Melhor admitir que nao sabe.
         assertThat(StayType.fromText("Recanto das Flores")).isEqualTo(StayType.OUTRO);

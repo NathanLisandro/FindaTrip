@@ -71,7 +71,7 @@ public class BookingScraper implements LodgingProviderPort {
         return Optional.of(new LodgingOffer("booking-" + index, name, neighborhood(card), total.get(), nights,
             taxes, zero, zero, rating, Set.copyOf(amenities),
             BrazilianText.decimal(text(card, "distancia")).orElse(0),
-            SOURCE, link(card), image(card, "imagem"), StayType.fromText(name + " " + body)));
+            SOURCE, link(card), image(card, "imagem"), StayType.fromText(name + " " + text(card, "unidade"))));
     }
 
     /** "Campeche, Florianopolis" -> "Campeche". Sem virgula, nao ha bairro. */

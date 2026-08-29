@@ -3,77 +3,112 @@ import { useSearch } from './hooks/useSearch';
 import { SearchForm } from './components/SearchForm';
 import { SourceProgress } from './components/SourceProgress';
 import { DemoNotice } from './components/DemoNotice';
-import { NeighborhoodChips } from './components/NeighborhoodChips';
-import { FilterBar } from './components/FilterBar';
+import { FilterSidebar } from './components/FilterSidebar';
 import { PackageCard } from './components/PackageCard';
 import { DateOptions } from './components/DateOptions';
+import { inteiro } from './formato';
 
 export default function App() {
   const { resultado, buscando, erro, buscar, filtrar } = useSearch();
   const [filtros, setFiltros] = useState({});
   const [bairro, setBairro] = useState(null);
+  const [tipos, setTipos] = useState([]);
+  const [mostrando, setMostrando] = useState(8);
 
-  const aplicar = (novos, novoBairro = bairro) => {
-    setFiltros(novos);
+  const aplicar = (novosFiltros, novoBairro, novosTipos) => {
+    setFiltros(novosFiltros);
     setBairro(novoBairro);
-    filtrar({ ...novos, neighborhood: novoBairro || '' });
+    setTipos(novosTipos);
+    setMostrando(8);
+    filtrar({ ...novosFiltros, neighborhood: novoBairro || '', stayTypes: novosTipos });
   };
 
   const degradadas = (resultado?.sources || [])
-    .filter((fonte) => fonte.health === 'DEGRADADO')
-    .map((fonte) => fonte.source);
+    .filter((f) => f.health === 'DEGRADADO')
+    .map((f) => f.source);
+
+  const pacotes = resultado?.packages || [];
+  const temResultado = resultado && resultado.status !== 'ERRO' && resultado.status !== 'BUSCANDO';
 
   return (
-    <main className="tela">
-      <header className="cabecalho">
-        <h1>Para onde e quando?</h1>
-        <p>Compara o custo real da viagem — depois de somar taxas, bagagem e seguro.</p>
-      </header>
-      <DemoNotice fontes={resultado?.sources} />
+    <>
+      <div className="topo">
+        <div className="topo__interno">
+          <span className="marca">FindaTrip</span>
+          <span className="marca__lema">o custo real da viagem</span>
+        </div>
+      </div>
 
-      <SearchForm onBuscar={(criterio) => { setFiltros({}); setBairro(null); buscar(criterio); }} buscando={buscando} />
+      <main className="tela">
+        <header className="cabecalho">
+          <h1>Para onde e quando?</h1>
+          <p>Compara voo e hospedagem em vários sites e soma taxa, bagagem e seguro antes de comparar.</p>
+        </header>
 
-      {(buscando || resultado) && <SourceProgress fontes={resultado?.sources} buscando={buscando} />}
+        <DemoNotice fontes={resultado?.sources} />
 
-      {erro && <p className="recado">{erro}</p>}
+        <SearchForm
+          onBuscar={(criterio) => { setFiltros({}); setBairro(null); setTipos([]); setMostrando(8); buscar(criterio); }}
+          buscando={buscando}
+        />
 
-      {resultado?.status === 'ERRO' && (
-        <p className="recado">
-          Nenhuma combinação encontrada
-          {degradadas.length > 0 ? `. Fontes com problema: ${degradadas.join(', ')}.` : ' para essas datas.'}
-        </p>
-      )}
+        {(buscando || resultado) && <SourceProgress fontes={resultado?.sources} buscando={buscando} />}
 
-      {resultado?.status === 'PARCIAL' && (
-        <p className="recado">Resultado parcial — sem dados de: {degradadas.join(', ')}.</p>
-      )}
+        {erro && <p className="recado">{erro}</p>}
 
-      {resultado && resultado.status !== 'ERRO' && (
-        <>
-          <NeighborhoodChips
-            bairros={resultado.neighborhoods}
-            selecionado={bairro}
-            onSelecionar={(novo) => aplicar(filtros, novo)}
-          />
-          <FilterBar filtros={filtros} onMudar={(novos) => aplicar(novos)} />
+        {resultado?.status === 'ERRO' && (
+          <p className="recado">
+            Nenhuma combinação encontrada
+            {degradadas.length > 0 ? `. Fontes com problema: ${degradadas.join(', ')}.` : ' para essas datas.'}
+          </p>
+        )}
 
-          {resultado.packages.length === 0 && !buscando && (
-            <p className="recado">
-              {bairro
-                ? `Nenhum pacote em ${bairro} com esses filtros. Toque em "Todos os bairros" ou afrouxe algum filtro.`
-                : 'Nenhum pacote passa nos filtros. Afrouxe algum deles.'}
-            </p>
-          )}
+        {resultado?.status === 'PARCIAL' && (
+          <p className="recado">Resultado parcial — sem dados de: {degradadas.join(', ')}.</p>
+        )}
 
-          <section className="pacotes">
-            {resultado.packages.map((pacote, indice) => (
-              <PackageCard key={pacote.id} pacote={pacote} destaque={indice === 0} />
-            ))}
-          </section>
+        {temResultado && (
+          <div className="conteudo">
+            <FilterSidebar
+              bairros={resultado.neighborhoods}
+              tipos={resultado.stayTypes}
+              filtros={filtros}
+              bairro={bairro}
+              tiposEscolhidos={tipos}
+              onFiltros={(novos) => aplicar(novos, bairro, tipos)}
+              onBairro={(nova) => aplicar(filtros, nova, tipos)}
+              onTipos={(novos) => aplicar(filtros, bairro, novos)}
+            />
 
-          <DateOptions opcoes={resultado.dateOptions} />
-        </>
-      )}
-    </main>
+            <section className="resultados">
+              <div className="resultados__topo">
+                <strong>{inteiro(resultado.totalMatching || pacotes.length)} pacotes</strong>
+                <span>ordenados por custo-benefício</span>
+              </div>
+
+              {pacotes.length === 0 && !buscando && (
+                <p className="recado">
+                  Nenhum pacote com esses filtros. Toque em Limpar ou afrouxe algum deles.
+                </p>
+              )}
+
+              <div className="pacotes">
+                {pacotes.slice(0, mostrando).map((pacote, indice) => (
+                  <PackageCard key={pacote.id} pacote={pacote} destaque={indice === 0} />
+                ))}
+              </div>
+
+              {pacotes.length > mostrando && (
+                <button type="button" className="mais" onClick={() => setMostrando((m) => m + 8)}>
+                  Ver mais {Math.min(8, pacotes.length - mostrando)} de {inteiro(pacotes.length)}
+                </button>
+              )}
+
+              <DateOptions opcoes={resultado.dateOptions} />
+            </section>
+          </div>
+        )}
+      </main>
+    </>
   );
 }
