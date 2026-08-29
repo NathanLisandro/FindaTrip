@@ -42,7 +42,25 @@ public class DomainToDtoMapper {
             lodging.rating().reviewCount(),
             travelPackage.hasCar() ? travelPackage.car().offer().supplier() : null,
             travelPackage.hasCar() ? travelPackage.car().offer().category().name() : null,
-            linkBuilders.stream().map(builder -> new BookingLinkDTO(builder.partnerName(), builder.searchUrl(criteria).toString())).toList());
+            links(travelPackage, criteria));
+    }
+
+    /**
+     * O link da hospedagem aponta para O ANUNCIO, no site de onde ele veio.
+     * Antes todo card oferecia "Reservar no Booking.com" mesmo quando o anuncio era do Airbnb,
+     * e caia na pagina de busca, obrigando o usuario a procurar de novo o que ja tinhamos achado.
+     * Para o voo nao existe link direto: a busca do parceiro e o melhor honesto.
+     */
+    private List<BookingLinkDTO> links(TravelPackage travelPackage, SearchCriteria criteria) {
+        var links = new java.util.ArrayList<BookingLinkDTO>();
+        var lodging = travelPackage.lodging().offer();
+        if (lodging.hasLink()) {
+            links.add(new BookingLinkDTO("Ver no " + lodging.source(), lodging.url()));
+        }
+        linkBuilders.stream()
+            .filter(builder -> builder.partnerName().equals("Google Flights"))
+            .forEach(builder -> links.add(new BookingLinkDTO("Ver voos no Google", builder.searchUrl(criteria).toString())));
+        return List.copyOf(links);
     }
 
     public SourceStatusDTO toDto(SourceStatus source) {

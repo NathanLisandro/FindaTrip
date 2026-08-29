@@ -11,7 +11,7 @@ class LodgingOfferTest {
     private static LodgingOffer offer(String neighborhood) {
         return new LodgingOffer("lo-1", "Pousada Maré Alta", neighborhood, Money.brl("600.00"), 3,
             Money.brl("30.00"), Money.brl("20.00"), Money.brl("0.00"), new HotelRating(8.5, 500),
-            Set.of(Amenity.BREAKFAST_INCLUDED), 1.0);
+            Set.of(Amenity.BREAKFAST_INCLUDED), 1.0, "Booking.com", "https://www.booking.com/hotel/br/teste.html");
     }
 
     @Test void keepsTheNeighborhoodItWasGiven() {

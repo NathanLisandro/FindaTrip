@@ -15,6 +15,8 @@ import org.jsoup.nodes.Element;
 
 public class BookingScraper implements LodgingProviderPort {
 
+    private static final String SOURCE = "Booking.com";
+
     private static final String SITE = "booking";
     private static final Path SCRAPERS = Path.of("scrapers");
 
@@ -68,7 +70,8 @@ public class BookingScraper implements LodgingProviderPort {
 
         return Optional.of(new LodgingOffer("booking-" + index, name, neighborhood(card), total.get(), nights,
             taxes, zero, zero, rating, Set.copyOf(amenities),
-            BrazilianText.decimal(text(card, "distancia")).orElse(0)));
+            BrazilianText.decimal(text(card, "distancia")).orElse(0),
+            SOURCE, link(card)));
     }
 
     /** "Campeche, Florianopolis" -> "Campeche". Sem virgula, nao ha bairro. */
@@ -77,6 +80,20 @@ public class BookingScraper implements LodgingProviderPort {
         if (address == null) return null;
         int comma = address.indexOf(',');
         return comma > 0 ? address.substring(0, comma).trim() : null;
+    }
+
+    /**
+     * O link do proprio anuncio, que o card ja traz.
+     * Mandar o usuario para a pagina de busca faria ele procurar de novo o que ja achamos —
+     * e, com varias fontes, levaria ao site errado.
+     */
+    private String link(Element card) {
+        var anchor = card.selectFirst(config.selector("link"));
+        if (anchor == null) return null;
+        var href = anchor.attr("href");
+        if (href == null || href.isBlank()) return null;
+        var semQuery = href.split("\\?")[0];
+        return semQuery.startsWith("http") ? semQuery : "https://www.booking.com" + semQuery;
     }
 
     private String text(Element card, String selectorKey) {

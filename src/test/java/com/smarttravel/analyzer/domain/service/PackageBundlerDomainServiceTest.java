@@ -20,7 +20,8 @@ class PackageBundlerDomainServiceTest {
         var offer = base.lodging().offer();
         var renamed = new com.smarttravel.analyzer.domain.model.lodging.LodgingOffer(lodgingId, offer.name(),
             offer.neighborhood(), offer.stayTotal(), offer.nights(), offer.serviceFees(), offer.cityTaxes(),
-            offer.resortFees(), offer.rating(), offer.amenities(), offer.distanceToAttractionsKm());
+            offer.resortFees(), offer.rating(), offer.amenities(), offer.distanceToAttractionsKm(),
+            offer.source(), offer.url());
         return new TravelPackage(base.id(), base.totalPrice(), base.valueScore(), base.qualityScore(),
             base.convenienceScore(), base.recommendationType(), base.flight(),
             new PackagePart<>(renamed, renamed.normalize()), base.car());
@@ -32,7 +33,7 @@ class PackageBundlerDomainServiceTest {
             new Location("REC", "Recife", "BR"), null, false, false)), .9);
         var lodgingOffer = new LodgingOffer(id + "-l", "Hotel " + id, "Boa Viagem", Money.brl("100.00"), 1,
             Money.brl("0.00"), Money.brl("0.00"), Money.brl("0.00"), new HotelRating(8.5, 500),
-            Set.of(Amenity.BREAKFAST_INCLUDED), 1.0);
+            Set.of(Amenity.BREAKFAST_INCLUDED), 1.0, "Booking.com", "https://www.booking.com/hotel/br/teste.html");
         return new TravelPackage(id, Money.brl(total), new Score(value), new Score(quality), new Score(convenience), null,
             new PackagePart<>(flightOffer, flightOffer.normalize(false)),
             new PackagePart<>(lodgingOffer, lodgingOffer.normalize()), null);

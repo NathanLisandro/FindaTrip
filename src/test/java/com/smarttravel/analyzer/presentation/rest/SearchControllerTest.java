@@ -48,7 +48,7 @@ class SearchControllerTest {
             .andExpect(jsonPath("$.packages[0].why").isNotEmpty())
             .andExpect(jsonPath("$.packages[0].lodgingName").isNotEmpty())
             .andExpect(jsonPath("$.packages[0].neighborhood").isNotEmpty())
-            .andExpect(jsonPath("$.packages[0].links.length()").value(2));
+            .andExpect(jsonPath("$.packages[0].links.length()").value(org.hamcrest.Matchers.greaterThan(0)));
     }
 
     @Test void theResultListsTheNeighborhoodsFoundWithCountAndCheapestPrice() throws Exception {

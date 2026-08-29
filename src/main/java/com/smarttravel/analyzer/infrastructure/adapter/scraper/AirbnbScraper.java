@@ -16,6 +16,9 @@ import org.jsoup.nodes.Element;
 
 public class AirbnbScraper implements LodgingProviderPort {
 
+    private static final String SOURCE = "Airbnb";
+    private static final String BASE = "https://www.airbnb.com.br";
+
     private static final String SITE = "airbnb";
     private static final Path SCRAPERS = Path.of("scrapers");
 
@@ -50,14 +53,17 @@ public class AirbnbScraper implements LodgingProviderPort {
         var offers = new ArrayList<LodgingOffer>();
         var cards = Jsoup.parse(html).select(config.selector("card"));
         for (int index = 0; index < cards.size(); index++) {
-            toOffer(cards.get(index), index, nights).ifPresent(offers::add);
+            toOffer(cards.get(index), index, nights, criteria).ifPresent(offers::add);
         }
         return List.copyOf(offers);
     }
 
-    private Optional<LodgingOffer> toOffer(Element card, int index, int nights) {
+    private Optional<LodgingOffer> toOffer(Element card, int index, int nights, SearchCriteria criteria) {
         var name = text(card, config.selector("nome"));
         if (name == null || name.isBlank()) return Optional.empty();
+
+        var url = link(card);
+        if (!matchesRequestedDates(url, criteria)) return Optional.empty();
 
         var body = card.text();
         // Sem o parcelamento, o ultimo valor e o total ja com desconto ("Total: R$ 3.116 R$ 2.766").
@@ -72,7 +78,7 @@ public class AirbnbScraper implements LodgingProviderPort {
         // O Airbnb nao publica bairro no card: passar null vira "Nao informado" no dominio,
         // que e a verdade. Deduzir bairro do titulo seria chute.
         return Optional.of(new LodgingOffer("airbnb-" + index, name, null, total.get(), nights,
-            ZERO, ZERO, ZERO, rating(body), Set.copyOf(amenities), 0));
+            ZERO, ZERO, ZERO, rating(body), Set.copyOf(amenities), 0, SOURCE, url));
     }
 
     /**
@@ -86,6 +92,33 @@ public class AirbnbScraper implements LodgingProviderPort {
         if (!matcher.find()) return new HotelRating(0, 0);
         double outOfFive = Double.parseDouble(matcher.group(1).replace(',', '.'));
         return new HotelRating(outOfFive * 2, Integer.parseInt(matcher.group(2)));
+    }
+
+    /**
+     * O Airbnb ja publica o link do anuncio com as datas e os hospedes da busca.
+     * Alguns vem sem o esquema e ate sem a barra inicial ("www.airbnb.com.br/rooms/..."),
+     * o que dobrava o dominio quando so se testava por "http".
+     */
+    private static String link(Element card) {
+        var meta = card.selectFirst("[itemprop=url]");
+        if (meta == null) return null;
+        var href = meta.hasAttr("content") ? meta.attr("content") : meta.attr("href");
+        if (href == null || href.isBlank()) return null;
+        if (href.startsWith("http")) return href;
+        if (href.startsWith("www.")) return "https://" + href;
+        return BASE + (href.startsWith("/") ? href : "/" + href);
+    }
+
+    /**
+     * O Airbnb mistura anuncios INDISPONIVEIS no periodo, oferecendo datas proximas.
+     * O link deles carrega outra data, e o preco e de outra estadia: aceitar isso poria
+     * na tela o preco de seis noites de outro fim de semana como se fosse a viagem pedida.
+     */
+    private static boolean matchesRequestedDates(String url, SearchCriteria criteria) {
+        if (url == null) return false;
+        if (!url.contains("check_in=")) return true;   // sem data no link, nada a contradizer
+        return url.contains("check_in=" + criteria.departureDate())
+            && url.contains("check_out=" + criteria.returnDate());
     }
 
     private static String text(Element card, String selector) {

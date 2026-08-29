@@ -15,7 +15,14 @@ import java.util.List;
 
 public class PackageAssemblerDomainService {
 
-    public static final int MAX_PER_DIMENSION = 5;
+    /**
+     * Voo e carro variam pouco e multiplicam a combinacao, entao ficam curtos.
+     * A hospedagem e o que o usuario escolhe por regiao e preco: cortar em cinco fazia
+     * Florianopolis inteira aparecer como dois bairros na tela.
+     */
+    public static final int MAX_FLIGHTS = 5;
+    public static final int MAX_LODGINGS = 40;
+    public static final int MAX_CARS = 3;
     private static final double DESTINATION_MEAN_RATING = 8.0;
     private static final int RATING_CONFIDENCE_WEIGHT = 100;
 
@@ -31,11 +38,11 @@ public class PackageAssemblerDomainService {
 
     public List<TravelPackage> assemble(SearchCriteria criteria, TravelOffers offers) {
         var flights = cheapest(offers.flights().stream()
-            .map(offer -> new PackagePart<>(offer, normalizer.normalizeFlight(offer, criteria.checkedBagRequested()))).toList());
+            .map(offer -> new PackagePart<>(offer, normalizer.normalizeFlight(offer, criteria.checkedBagRequested()))).toList(), MAX_FLIGHTS);
         var lodgings = cheapest(offers.lodgings().stream()
-            .map(offer -> new PackagePart<>(offer, normalizer.normalizeLodging(offer))).toList());
+            .map(offer -> new PackagePart<>(offer, normalizer.normalizeLodging(offer))).toList(), MAX_LODGINGS);
         var cars = criteria.carRequired()
-            ? cheapest(offers.cars().stream().map(offer -> new PackagePart<>(offer, normalizer.normalizeCarRental(offer))).toList())
+            ? cheapest(offers.cars().stream().map(offer -> new PackagePart<>(offer, normalizer.normalizeCarRental(offer))).toList(), MAX_CARS)
             : List.<PackagePart<CarRentalOffer>>of();
 
         if (flights.isEmpty() || lodgings.isEmpty()) return List.of();
@@ -48,10 +55,10 @@ public class PackageAssemblerDomainService {
         return combinations.stream().map(combination -> score(combination, trend)).toList();
     }
 
-    private static <T> List<PackagePart<T>> cheapest(List<PackagePart<T>> parts) {
+    private static <T> List<PackagePart<T>> cheapest(List<PackagePart<T>> parts, int limite) {
         return parts.stream()
             .sorted(Comparator.comparing(part -> part.price().totalPrice()))
-            .limit(MAX_PER_DIMENSION)
+            .limit(limite)
             .toList();
     }
 

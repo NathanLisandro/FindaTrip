@@ -29,7 +29,7 @@ public class DemoLodgingProvider implements LodgingProviderPort {
             offers.add(new LodgingOffer("demo-lo-" + index, NAMES.get(index), NEIGHBORHOODS.get(index), money((110 + random.nextInt(320)) * nights), nights,
                 money(random.nextInt(60)), money(random.nextInt(35)), money(index % 4 == 0 ? 45 : 0),
                 new HotelRating(round(7.2 + random.nextDouble() * 2.6), 40 + random.nextInt(2400)),
-                Set.copyOf(amenities), round(random.nextDouble() * 4)));
+                Set.copyOf(amenities), round(random.nextDouble() * 4), "Demonstração", null));
         }
         return List.copyOf(offers);
     }
