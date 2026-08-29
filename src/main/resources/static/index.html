@@ -1,56 +1,13 @@
 <!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FindaTrip — o pacote que vale a pena</title>
-  <link rel="stylesheet" href="/styles.css" />
-</head>
-<body>
-  <main class="shell">
-    <div id="demo-banner" class="demo-banner" hidden>
-      Dados de demonstração — os preços não são reais.
-    </div>
-
-    <h1>Para onde e quando?</h1>
-
-    <form id="search-form" class="search-card">
-      <label>Origem <input name="origin" value="CWB" maxlength="3" required /></label>
-      <label>Destino <input name="destination" value="REC" maxlength="3" required /></label>
-      <label>Ida <input name="departureDate" type="date" required /></label>
-      <label>Volta <input name="returnDate" type="date" required /></label>
-      <label>Viajantes <input name="travelers" type="number" min="1" value="2" required /></label>
-      <label class="check"><input name="checkedBagRequested" type="checkbox" checked /> Bagagem despachada</label>
-      <label class="check"><input name="carRequired" type="checkbox" /> Preciso de carro</label>
-      <label class="check"><input name="flexibleDates" type="checkbox" /> Datas flexíveis (±3 dias)</label>
-      <button type="submit">Buscar</button>
-    </form>
-
-    <section id="progress" class="progress" hidden>
-      <h2>Buscando…</h2>
-      <ul id="sources"></ul>
-    </section>
-
-    <section id="neighborhoods" class="neighborhoods" hidden>
-      <h2>Em que parte de <span id="destination-label"></span>?</h2>
-      <div id="neighborhood-chips" class="chips"></div>
-    </section>
-
-    <section id="filters" class="filters" hidden>
-      <label>Preço máximo <input id="f-maxPrice" type="number" min="0" step="50" /></label>
-      <label>Nota mínima <input id="f-minRating" type="number" min="0" max="10" step="0.5" /></label>
-      <label class="check"><input id="f-directFlightOnly" type="checkbox" /> Só voo direto</label>
-      <label class="check"><input id="f-breakfastIncluded" type="checkbox" /> Café da manhã</label>
-      <label class="check"><input id="f-freeCancellation" type="checkbox" /> Cancelamento grátis</label>
-    </section>
-
-    <p id="message" class="message" hidden></p>
-    <section id="packages" class="packages"></section>
-    <section id="date-options" class="date-options" hidden>
-      <h2>Mudando a data</h2>
-      <table id="date-table"></table>
-    </section>
-  </main>
-  <script src="/app.js"></script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FindaTrip — o pacote que vale a pena</title>
+    <script type="module" crossorigin src="/assets/index-zDCry26W.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CZOMfTSa.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
 </html>

@@ -15,9 +15,19 @@ Java 21 · Spring Boot 3.5.5 · Maven · JUnit 5 + AssertJ (via `spring-boot-sta
 Front atual: HTML/CSS/JS estático em `src/main/resources/static/`.
 
 ```bash
-mvn test              # bateria completa
-mvn spring-boot:run
+mvn test                       # bateria completa, sem rede
+mvn test -Dgroups=rede         # só os testes que tocam a internet
+mvn spring-boot:run            # aplicação em http://localhost:8080
+
+cd front && npm run build      # React -> src/main/resources/static/
+cd front && npm run dev        # front em modo dev, com proxy para a 8080
+
+docker compose up --build      # tudo em container (imagem ~1,1 GB, por causa do Chrome)
 ```
+
+O front é React + Vite em `front/`, com um componente por arquivo em `front/src/components/`
+e o estado da busca no hook `front/src/hooks/useSearch.js`. O build sai direto para o
+`static/` do Spring.
 
 Não há Maven Wrapper no repositório — use o `mvn` do sistema.
 
@@ -124,11 +134,40 @@ Nenhuma implementação entra sem teste que a justifique.
 
 ## Fontes
 
-Sem API de afiliado. Fontes são scrapers próprios, configurados por YAML em `scrapers/`.
+Sem API de afiliado e sem API paga. Fontes são scrapers próprios, configurados por YAML em
+`scrapers/`, rodando em **Chrome de verdade** via Playwright (`setChannel("chrome")` — nunca
+baixe os navegadores do Playwright, são 1,4 GB inúteis).
+
+**O que responde hoje, apurado por sondagem em 29/08/2026:**
+
+| Fonte | Estado |
+|---|---|
+| Google Voos | funciona — `li.pIav2d`, com horário, companhia, escala e preço |
+| Booking | funciona — `[data-testid=property-card]`, com bairro e taxas extras |
+| Airbnb | funciona — `[data-testid=card-container]` |
+| Google Hotels | **fora**: a URL de busca não carrega as datas, então os preços são de outro período |
+| Decolar, Hoteis.com | **bloqueiam** (403 e 429 com captcha), mesmo com Chrome real |
+| LATAM, Smiles diretos | exigem fluxo de formulário e provavelmente login |
+| Locadoras | nenhuma raspada: o carro segue simulado, e a tela avisa por fonte |
+
+Sem navegador real, TODOS devolvem desafio de robô. Não tente com HttpClient.
 Duffel pode entrar como fonte opcional de voo, atrás da mesma porta dos scrapers.
 Seletor CSS **NUNCA** fica em código Java — sempre no YAML do site.
 Todo scraper degrada com elegância: falha vira resultado parcial marcado, nunca exceção
 que sobe.
+
+**Escala de nota difere por fonte.** Booking pontua de 0 a 10, Airbnb de 0 a 5. O scraper
+converte para 0–10 na entrada; sem isso um anúncio 4,92 excelente competiria como se fosse
+4,92 de 10, e o ranking entre fontes sai torto.
+
+**`LodgingOffer` guarda o total da estadia, não a diária.** Os sites anunciam o total, e nem
+todo total divide em centavos por noite: guardar a diária e multiplicar devolvia R$ 2.765,98
+onde o Airbnb diz R$ 2.766,00.
+
+**Nenhum teste toca a rede.** Os parsers rodam contra HTML real gravado em
+`src/test/resources/fixtures/*.html.gz`. Teste que precisa de internet leva `@Tag("rede")` e
+fica fora do `mvn test` (rode com `mvn test -Dgroups=rede`). O `@SpringBootTest` usa
+`@ActiveProfiles("test")`, senão sobe o Chrome e bate nos sites de verdade.
 
 Detalhes que decorrem disso:
 

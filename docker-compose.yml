@@ -1,0 +1,10 @@
+services:
+  findatrip:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      # Cache de HTML entre execucoes: reprocessar nao pode bater nos sites de novo.
+      - ./.cache:/app/.cache
+    # O Chrome precisa de mais /dev/shm do que o padrao do Docker (64 MB) ou trava ao renderizar.
+    shm_size: "1gb"

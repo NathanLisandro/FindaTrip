@@ -1,0 +1,7 @@
+target/
+front/node_modules/
+front/dist/
+.cache/
+.git/
+docs/
+*.log
