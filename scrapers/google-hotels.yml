@@ -1,0 +1,9 @@
+nome: google-hotels
+tipo: spa
+url_busca: "https://www.google.com/travel/search?q=hoteis%20{cidade}&hl=pt-BR&curr=BRL"
+espera: "c-wiz"
+rate_limit_ms: 6000
+seletores:
+  card: "c-wiz div[role='listitem'], div[jsname]"
+_meta:
+  verificado_em: 2026-08-29
