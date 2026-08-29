@@ -15,7 +15,7 @@ import java.util.Set;
 public record LodgingOffer(String id, String name, String neighborhood, Money stayTotal, int nights,
                            Money serviceFees, Money cityTaxes, Money resortFees, HotelRating rating,
                            Set<Amenity> amenities, double distanceToAttractionsKm,
-                           String source, String url) {
+                           String source, String url, String imageUrl) {
 
     public static final String UNKNOWN_NEIGHBORHOOD = "Não informado";
 
@@ -27,6 +27,8 @@ public record LodgingOffer(String id, String name, String neighborhood, Money st
 
     /** O anuncio pode ser aberto direto? Oferta de demonstracao nao tem para onde levar. */
     public boolean hasLink() { return url != null && !url.isBlank(); }
+
+    public boolean hasImage() { return imageUrl != null && !imageUrl.isBlank(); }
 
     /** Derivada, so para exibir. O valor de verdade e o total. */
     public Money nightlyRate() {

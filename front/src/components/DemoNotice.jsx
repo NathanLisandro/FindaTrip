@@ -9,7 +9,8 @@ export function DemoNotice({ fontes }) {
   if (simuladas.length === 0) return null;
   return (
     <div className="aviso-demo" role="status">
-      Dados simulados em: <b>{simuladas.join(', ')}</b>. Esses preços não são reais.
+      <span aria-hidden="true">⚠</span>
+      <span>Dados simulados em <b>{simuladas.join(', ')}</b> — esses preços não são reais.</span>
     </div>
   );
 }

@@ -156,6 +156,21 @@ Seletor CSS **NUNCA** fica em código Java — sempre no YAML do site.
 Todo scraper degrada com elegância: falha vira resultado parcial marcado, nunca exceção
 que sobe.
 
+**A tarifa do Google Voos é por adulto.** A própria página avisa. O scraper multiplica pelo
+número de viajantes; sem isso a viagem de duas pessoas saía um voo mais barata. Passar
+"for 2 adults" na consulta NÃO funciona: devolve outra busca, silenciosamente.
+
+**Cada oferta carrega a própria fonte e o próprio link.** O botão de reserva abre o anúncio no
+site de onde ele veio. Antes todo card oferecia "Reservar no Booking" e caía na página de busca,
+inclusive para anúncios do Airbnb.
+
+**O Airbnb mistura anúncios indisponíveis no período**, repreçados para datas próximas. O
+scraper descarta quem tem `check_in` diferente do pedido — senão o preço de outra estadia entra
+como se fosse a viagem buscada.
+
+**Foto passa pelo proxy `/api/img`**, nunca por hotlink: os CDNs bloqueiam por referer. O proxy
+tem allowlist de host (`ImageProxyPolicy`); sem ela seria uma porta para a rede interna.
+
 **Escala de nota difere por fonte.** Booking pontua de 0 a 10, Airbnb de 0 a 5. O scraper
 converte para 0–10 na entrada; sem isso um anúncio 4,92 excelente competiria como se fosse
 4,92 de 10, e o ranking entre fontes sai torto.

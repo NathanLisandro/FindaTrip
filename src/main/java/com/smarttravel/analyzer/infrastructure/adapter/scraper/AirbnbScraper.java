@@ -78,7 +78,7 @@ public class AirbnbScraper implements LodgingProviderPort {
         // O Airbnb nao publica bairro no card: passar null vira "Nao informado" no dominio,
         // que e a verdade. Deduzir bairro do titulo seria chute.
         return Optional.of(new LodgingOffer("airbnb-" + index, name, null, total.get(), nights,
-            ZERO, ZERO, ZERO, rating(body), Set.copyOf(amenities), 0, SOURCE, url));
+            ZERO, ZERO, ZERO, rating(body), Set.copyOf(amenities), 0, SOURCE, url, image(card)));
     }
 
     /**
@@ -119,6 +119,14 @@ public class AirbnbScraper implements LodgingProviderPort {
         if (!url.contains("check_in=")) return true;   // sem data no link, nada a contradizer
         return url.contains("check_in=" + criteria.departureDate())
             && url.contains("check_out=" + criteria.returnDate());
+    }
+
+    /** A primeira foto do anuncio; as seguintes sao selo de "favorito" e afins. */
+    private static String image(Element card) {
+        var img = card.selectFirst("img[src*=muscache]");
+        if (img == null) return null;
+        var src = img.attr("src");
+        return src == null || src.isBlank() ? null : src;
     }
 
     private static String text(Element card, String selector) {

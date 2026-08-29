@@ -71,7 +71,7 @@ public class BookingScraper implements LodgingProviderPort {
         return Optional.of(new LodgingOffer("booking-" + index, name, neighborhood(card), total.get(), nights,
             taxes, zero, zero, rating, Set.copyOf(amenities),
             BrazilianText.decimal(text(card, "distancia")).orElse(0),
-            SOURCE, link(card)));
+            SOURCE, link(card), image(card, "imagem")));
     }
 
     /** "Campeche, Florianopolis" -> "Campeche". Sem virgula, nao ha bairro. */
@@ -94,6 +94,14 @@ public class BookingScraper implements LodgingProviderPort {
         if (href == null || href.isBlank()) return null;
         var semQuery = href.split("\\?")[0];
         return semQuery.startsWith("http") ? semQuery : "https://www.booking.com" + semQuery;
+    }
+
+    /** A foto do anuncio. Servida pelo proxy do backend, nunca por hotlink no CDN alheio. */
+    private String image(Element card, String selectorKey) {
+        var img = card.selectFirst(config.selector(selectorKey));
+        if (img == null) return null;
+        var src = img.attr("src");
+        return src == null || src.isBlank() ? null : src;
     }
 
     private String text(Element card, String selectorKey) {

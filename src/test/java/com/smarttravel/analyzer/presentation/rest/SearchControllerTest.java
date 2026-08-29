@@ -24,6 +24,21 @@ class SearchControllerTest {
         {"origin":"CWB","destination":"REC","departureDate":"2030-11-10","returnDate":"2030-11-13",
          "travelers":2,"checkedBagRequested":true,"carRequired":false,"flexibleDates":false}""";
 
+    /**
+     * A busca e assincrona de proposito. Ler antes de ela terminar devolve listas vazias e
+     * faz o teste falhar de vez em quando — trocar o executor por sincrono esconderia
+     * justamente o comportamento que se quer testar, entao o teste espera.
+     */
+    private String startSearchAndWait() throws Exception {
+        var id = startSearch();
+        for (int tentativa = 0; tentativa < 100; tentativa++) {
+            var corpo = mockMvc().perform(get("/api/search/{id}", id)).andReturn().getResponse().getContentAsString();
+            if (!corpo.contains("\"status\":\"BUSCANDO\"")) return id;
+            Thread.sleep(100);
+        }
+        throw new AssertionError("A busca nao terminou em 10 segundos");
+    }
+
     private String startSearch() throws Exception {
         var response = mockMvc().perform(post("/api/search").contentType(MediaType.APPLICATION_JSON).content(BODY))
             .andExpect(status().isAccepted())
@@ -37,7 +52,7 @@ class SearchControllerTest {
     }
 
     @Test void theResultCarriesThreeRecommendationsAndTheDemoFlag() throws Exception {
-        var id = startSearch();
+        var id = startSearchAndWait();
         mockMvc().perform(get("/api/search/{id}", id))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.demo").value(true))
@@ -52,7 +67,7 @@ class SearchControllerTest {
     }
 
     @Test void theResultListsTheNeighborhoodsFoundWithCountAndCheapestPrice() throws Exception {
-        var id = startSearch();
+        var id = startSearchAndWait();
         mockMvc().perform(get("/api/search/{id}", id))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.neighborhoods.length()").value(org.hamcrest.Matchers.greaterThan(1)))
@@ -62,7 +77,7 @@ class SearchControllerTest {
     }
 
     @Test void filteringByNeighborhoodKeepsTheNeighborhoodOptionsIntact() throws Exception {
-        var id = startSearch();
+        var id = startSearchAndWait();
         mockMvc().perform(get("/api/search/{id}", id).param("neighborhood", "bairro-que-nao-existe"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.packages.length()").value(0))
@@ -70,21 +85,21 @@ class SearchControllerTest {
     }
 
     @Test void everySourceIsReportedWithItsHealth() throws Exception {
-        var id = startSearch();
+        var id = startSearchAndWait();
         mockMvc().perform(get("/api/search/{id}", id))
             .andExpect(jsonPath("$.sources.length()").value(2))
             .andExpect(jsonPath("$.sources[0].health").value("OK"));
     }
 
     @Test void anImpossibleFilterReturnsAnEmptyPackageListNotAnError() throws Exception {
-        var id = startSearch();
+        var id = startSearchAndWait();
         mockMvc().perform(get("/api/search/{id}", id).param("maxPrice", "1"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.packages.length()").value(0));
     }
 
     @Test void aFilterPicksTheBestThreeAmongMatchingCandidatesInsteadOfTrimmingTheFinalThree() throws Exception {
-        var id = startSearch();
+        var id = startSearchAndWait();
         mockMvc().perform(get("/api/search/{id}", id).param("directFlightOnly", "true"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.packages.length()").value(org.hamcrest.Matchers.greaterThan(1)))
@@ -92,14 +107,14 @@ class SearchControllerTest {
     }
 
     @Test void theNeighborhoodOptionsComeFromEveryCandidateNotJustTheThreeRecommendations() throws Exception {
-        var id = startSearch();
+        var id = startSearchAndWait();
         mockMvc().perform(get("/api/search/{id}", id))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.neighborhoods.length()").value(org.hamcrest.Matchers.greaterThan(2)));
     }
 
     @Test void noRecommendationIsRepeatedUnderTwoDifferentLabels() throws Exception {
-        var id = startSearch();
+        var id = startSearchAndWait();
         var body = mockMvc().perform(get("/api/search/{id}", id)).andReturn().getResponse().getContentAsString();
         var ids = java.util.regex.Pattern.compile("\"id\":\"([^\"]+)\"").matcher(body).results()
             .map(match -> match.group(1)).toList();

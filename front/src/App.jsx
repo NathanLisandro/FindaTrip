@@ -25,7 +25,10 @@ export default function App() {
 
   return (
     <main className="tela">
-      <h1>Para onde e quando?</h1>
+      <header className="cabecalho">
+        <h1>Para onde e quando?</h1>
+        <p>Compara o custo real da viagem — depois de somar taxas, bagagem e seguro.</p>
+      </header>
       <DemoNotice fontes={resultado?.sources} />
 
       <SearchForm onBuscar={(criterio) => { setFiltros({}); setBairro(null); buscar(criterio); }} buscando={buscando} />
