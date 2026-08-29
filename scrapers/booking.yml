@@ -1,0 +1,18 @@
+nome: booking
+tipo: spa
+url_busca: "https://www.booking.com/searchresults.html?ss={cidade}&checkin={entrada}&checkout={saida}&group_adults={adultos}&selected_currency=BRL"
+espera: "[data-testid='property-card']"
+rate_limit_ms: 5000
+seletores:
+  card: "[data-testid='property-card']"
+  nome: "[data-testid='title']"
+  endereco: "[data-testid='address-link']"
+  distancia: "[data-testid='distance']"
+  preco: "[data-testid='price-and-discounted-price']"
+  taxas: "[data-testid='taxes-and-charges']"
+  nota: "[data-testid='review-score']"
+  periodo: "[data-testid='price-for-x-nights']"
+  link: "[data-testid='title-link']"
+  imagem: "[data-testid='image']"
+_meta:
+  verificado_em: 2026-08-29
