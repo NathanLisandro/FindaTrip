@@ -145,7 +145,7 @@ baixe os navegadores do Playwright, são 1,4 GB inúteis).
 | Google Voos | funciona — `li.pIav2d`, com horário, companhia, escala e preço |
 | Booking | funciona — `[data-testid=property-card]`, com bairro e taxas extras |
 | Airbnb | funciona — `[data-testid=card-container]` |
-| Google Hotels | **fora**: a URL de busca não carrega as datas, então os preços são de outro período |
+| Google Hotels | **fora**: a URL ignora as datas — o campo continua no dia seguinte, confirmado lendo o valor do input. Preencher pela interface também não pega: o calendário é widget próprio, não campo de texto. Precisaria montar o parâmetro `ts=` em protobuf |
 | **Decolar** | funciona, mas **só entrando por outra página**: pedir a URL de resultados direto dá 403. O `entrada:` do YAML e o `fetchAfterVisiting` do fetcher existem por causa disso. Traz horário, duração e se a bagagem despachada está inclusa |
 | Hoteis.com | **bloqueia** (429 com captcha), mesmo com Chrome real |
 | LATAM, Smiles diretos | exigem fluxo de formulário e provavelmente login |

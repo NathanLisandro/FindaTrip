@@ -36,6 +36,7 @@ public class BeanConfig {
         var configs = loader.load(SCRAPERS);
         return new CompositeLodgingProvider(List.of(
             new BookingScraper(fetcher, configs.get("booking")),
+            new KayakLodgingScraper(fetcher, configs.get("kayak")),
             new AirbnbScraper(fetcher, configs.get("airbnb"))));
     }
 
