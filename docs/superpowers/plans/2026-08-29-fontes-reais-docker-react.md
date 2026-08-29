@@ -69,16 +69,31 @@ Em `pom.xml`, dentro de `<dependencies>`:
 <dependency><groupId>org.yaml</groupId><artifactId>snakeyaml</artifactId><version>2.3</version></dependency>
 ```
 
-E, para que `@Tag("rede")` fique fora do build, configurar o surefire já existente:
+E, para que `@Tag("rede")` fique fora do build, configurar o surefire. **Atenção:** um
+`<excludedGroups>rede</excludedGroups>` fixo vence a propriedade de linha de comando, e aí
+`-Dgroups=rede` roda zero teste. Use uma propriedade com perfil:
 
 ```xml
+<properties>
+  <surefire.excluded.groups>rede</surefire.excluded.groups>
+</properties>
+
 <plugin>
   <groupId>org.apache.maven.plugins</groupId>
   <artifactId>maven-surefire-plugin</artifactId>
   <version>3.5.2</version>
-  <configuration><excludedGroups>rede</excludedGroups></configuration>
+  <configuration><excludedGroups>${surefire.excluded.groups}</excludedGroups></configuration>
 </plugin>
+
+<profiles><profile>
+  <id>rede</id>
+  <activation><property><name>groups</name><value>rede</value></property></activation>
+  <properties><surefire.excluded.groups></surefire.excluded.groups></properties>
+</profile></profiles>
 ```
+
+E no `Playwright.create()`, passe `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`: rodando no Chrome do
+sistema, os navegadores próprios do Playwright são 1,4 GB baixados à toa.
 
 Run: `mvn -q test` — deve continuar com 81 testes verdes.
 

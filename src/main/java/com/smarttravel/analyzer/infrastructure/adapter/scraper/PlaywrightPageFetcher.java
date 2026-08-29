@@ -48,7 +48,10 @@ public class PlaywrightPageFetcher implements PageFetcherPort {
 
     private Browser browser() {
         if (browser == null) {
-            playwright = Playwright.create();
+            // Rodamos no Chrome do sistema (setChannel abaixo), entao nao ha por que baixar
+            // os navegadores proprios do Playwright: sao 1,4 GB que nunca seriam usados.
+            playwright = Playwright.create(new Playwright.CreateOptions()
+                .setEnv(java.util.Map.of("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")));
             browser = playwright.chromium().launch(new BrowserType.LaunchOptions()
                 .setChannel("chrome").setHeadless(true)
                 .setArgs(List.of("--disable-blink-features=AutomationControlled", "--no-sandbox")));
