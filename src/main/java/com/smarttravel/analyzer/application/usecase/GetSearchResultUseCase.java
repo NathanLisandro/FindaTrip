@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class GetSearchResultUseCase {
 
+    /** Quantos pacotes a tela recebe. O suficiente para navegar, sem despejar centenas. */
+    private static final int MAX_NA_TELA = 40;
+
     private final SearchSessionStore store;
     private final PackageFilterDomainService filters;
     private final PackageBundlerDomainService bundler;
@@ -31,7 +34,8 @@ public class GetSearchResultUseCase {
             // Filtra TODOS os candidatos e so entao escolhe os perfis: marcar "so voo direto" deve
             // trazer os melhores pacotes com voo direto, nao o que sobrou dos tres ja escolhidos.
             var matching = filters.apply(session.candidates(), filter);
-            var visible = bundler.topRecommendations(matching);
+            // Lista inteira, com os tres perfis na frente. Tres cards escondiam centenas de opcoes.
+            var visible = bundler.rankedList(matching, MAX_NA_TELA);
             var packages = visible.stream().map(item -> mapper.toDto(item, matching, session.criteria())).toList();
             // Os bairros saem dos candidatos, nao do resultado filtrado: as opcoes nao podem sumir conforme se filtra.
             var neighborhoods = filters.summarise(session.candidates()).stream()
@@ -41,8 +45,20 @@ public class GetSearchResultUseCase {
                 .map(option -> new DateOptionDTO(option.departureDate(), option.returnDate(),
                     option.total().amount(), option.difference().amount()))
                 .toList();
+            // Os tipos saem dos candidatos, como os bairros: as opcoes nao podem sumir ao filtrar.
+            var tipos = session.candidates().stream()
+                .collect(java.util.stream.Collectors.groupingBy(item -> item.lodging().offer().type()))
+                .entrySet().stream()
+                .map(entrada -> new StayTypeDTO(entrada.getKey().name(), entrada.getKey().rotulo(),
+                    entrada.getValue().size(),
+                    entrada.getValue().stream().map(item -> item.totalPrice().amount())
+                        .min(java.math.BigDecimal::compareTo).orElse(java.math.BigDecimal.ZERO)))
+                .sorted(java.util.Comparator.comparing(StayTypeDTO::cheapest))
+                .toList();
+
             return new SearchResultResponse(session.id(), session.status(), session.demo(),
-                session.sources().stream().map(mapper::toDto).toList(), packages, neighborhoods, List.copyOf(dateOptions));
+                session.sources().stream().map(mapper::toDto).toList(), packages, neighborhoods,
+                List.copyOf(dateOptions), matching.size(), tipos);
         });
     }
 }

@@ -31,7 +31,7 @@ class PackageAssemblerDomainServiceTest {
     /** O segundo argumento e a diaria; o record guarda o total da estadia. */
     private static LodgingOffer lodging(String id, String nightly) {
         return new LodgingOffer(id, "Hotel " + id, "Boa Viagem", Money.brl(nightly).multiply(3), 3, Money.brl("30.00"), Money.brl("20.00"),
-            Money.brl("0.00"), new HotelRating(8.5, 500), Set.of(Amenity.BREAKFAST_INCLUDED), 1.0, "Booking.com", "https://www.booking.com/hotel/br/teste.html", null);
+            Money.brl("0.00"), new HotelRating(8.5, 500), Set.of(Amenity.BREAKFAST_INCLUDED), 1.0, "Booking.com", "https://www.booking.com/hotel/br/teste.html", null, StayType.HOTEL);
     }
 
     private static CarRentalOffer car(String id, String daily) {

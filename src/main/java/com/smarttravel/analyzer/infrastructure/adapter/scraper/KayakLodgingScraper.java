@@ -83,7 +83,7 @@ public class KayakLodgingScraper implements LodgingProviderPort {
         // O Kayak declara "Diaria total - Incluindo todos impostos e taxas": nao ha taxa a somar.
         return Optional.of(new LodgingOffer("kayak-" + index, nome.group(1).trim(), bairro(texto),
             total, noites, ZERO, ZERO, ZERO, avaliacao(texto), Set.copyOf(amenidades), 0,
-            fonte(melhor, cotacoes.size()), null, null));
+            fonte(melhor, cotacoes.size()), null, null, StayType.fromText(texto)));
     }
 
     /** Uma cotacao por site que o Kayak comparou. */

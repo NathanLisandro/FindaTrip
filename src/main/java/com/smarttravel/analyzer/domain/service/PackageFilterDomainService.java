@@ -44,6 +44,8 @@ public class PackageFilterDomainService {
         if (filter.minRating() != null && candidate.lodging().offer().rating().average() < filter.minRating()) return false;
         if (filter.directFlightOnly() && candidate.flight().offer().stops() > 0) return false;
         if (filter.breakfastIncluded() && !candidate.lodging().offer().has(Amenity.BREAKFAST_INCLUDED)) return false;
+        // Conjunto vazio quer dizer "qualquer tipo", nao "nenhum tipo".
+        if (!filter.stayTypes().isEmpty() && !filter.stayTypes().contains(candidate.lodging().offer().type())) return false;
         if (filter.neighborhood() != null && !filter.neighborhood().isBlank()
             && !fold(candidate.lodging().offer().neighborhood()).equals(fold(filter.neighborhood()))) return false;
         return !filter.freeCancellation() || candidate.lodging().offer().has(Amenity.FREE_FLEXIBLE_CANCELLATION);

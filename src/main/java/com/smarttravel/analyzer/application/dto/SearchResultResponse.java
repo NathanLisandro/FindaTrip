@@ -5,4 +5,5 @@ import java.util.List;
 
 public record SearchResultResponse(String searchId, SearchStatus status, boolean demo,
                                    List<SourceStatusDTO> sources, List<PackageDTO> packages,
-                                   List<NeighborhoodDTO> neighborhoods, List<DateOptionDTO> dateOptions) {}
+                                   List<NeighborhoodDTO> neighborhoods, List<DateOptionDTO> dateOptions,
+                                   int totalMatching, List<StayTypeDTO> stayTypes) {}
