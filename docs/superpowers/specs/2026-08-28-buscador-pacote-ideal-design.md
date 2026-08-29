@@ -38,7 +38,8 @@ os `NormalizedPrice` de cada parte. Hoje guarda só id, preço total e notas —
 tela não tem como mostrar qual hotel nem justificar a escolha.
 
 Combinação: produto cartesiano limitado. Para não explodir, cada dimensão entra ordenada
-por score e truncada nas N melhores (N=5), teto de 125 candidatos.
+por custo normalizado crescente e truncada nas N mais baratas (N=5), teto de 125
+candidatos. O ranking por qualidade acontece depois, sobre os candidatos montados.
 
 ### 2. Busca assíncrona
 
