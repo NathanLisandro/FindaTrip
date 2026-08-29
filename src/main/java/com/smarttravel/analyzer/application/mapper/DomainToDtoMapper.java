@@ -40,6 +40,8 @@ public class DomainToDtoMapper {
             lodging.neighborhood(),
             lodging.rating().average(),
             lodging.rating().reviewCount(),
+            lodging.source(),
+            imagem(lodging),
             travelPackage.hasCar() ? travelPackage.car().offer().supplier() : null,
             travelPackage.hasCar() ? travelPackage.car().offer().category().name() : null,
             links(travelPackage, criteria));
@@ -51,6 +53,12 @@ public class DomainToDtoMapper {
      * e caia na pagina de busca, obrigando o usuario a procurar de novo o que ja tinhamos achado.
      * Para o voo nao existe link direto: a busca do parceiro e o melhor honesto.
      */
+    /** A foto passa pelo proxy do backend: hotlink no CDN deles e bloqueado por referer. */
+    private static String imagem(com.smarttravel.analyzer.domain.model.lodging.LodgingOffer lodging) {
+        if (!lodging.hasImage()) return null;
+        return "/api/img?ref=" + java.net.URLEncoder.encode(lodging.imageUrl(), java.nio.charset.StandardCharsets.UTF_8);
+    }
+
     private List<BookingLinkDTO> links(TravelPackage travelPackage, SearchCriteria criteria) {
         var links = new java.util.ArrayList<BookingLinkDTO>();
         var lodging = travelPackage.lodging().offer();
