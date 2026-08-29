@@ -73,6 +73,18 @@ class BookingScraperTest {
         assertThat(offers()).allSatisfy(offer -> assertThat(offer.stayTotal().currency()).isEqualTo(Money.BRL));
     }
 
+    @Test void everyOfferSaysItCameFromBooking() {
+        assertThat(offers()).allSatisfy(offer -> assertThat(offer.source()).isEqualTo("Booking.com"));
+    }
+
+    @Test void everyOfferCarriesTheLinkToItsOwnListing() {
+        // Mandar o usuario para a pagina de busca e fazer ele procurar de novo o que ja achamos.
+        assertThat(offers()).allSatisfy(offer -> {
+            assertThat(offer.url()).isNotBlank();
+            assertThat(offer.url()).startsWith("https://www.booking.com/hotel/");
+        });
+    }
+
     @Test void declaresItselfAsRealDataNotDemo() {
         assertThat(new BookingScraper(null, null).isDemo()).isFalse();
     }

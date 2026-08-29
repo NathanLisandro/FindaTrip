@@ -1,10 +1,11 @@
 nome: airbnb
 tipo: spa
 url_busca: "https://www.airbnb.com.br/s/{cidade}/homes?checkin={entrada}&checkout={saida}&adults={adultos}"
-espera: "[data-testid='card-container']"
+espera: "[itemprop='itemListElement']"
 rate_limit_ms: 6000
 seletores:
-  card: "[data-testid='card-container']"
+  # O itemListElement envolve o card E o link do anuncio; o card-container sozinho nao tem o link.
+  card: "[itemprop='itemListElement']"
   nome: "[data-testid='listing-card-name']"
   titulo: "[data-testid='listing-card-title']"
 _meta:

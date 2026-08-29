@@ -73,9 +73,14 @@ public class GoogleFlightsScraper implements FlightProviderPort {
         var fare = BrazilianText.firstMoney(text);
         if (fare.isEmpty()) return Optional.empty();   // item sem preco nao derruba a lista
 
+        // A pagina anuncia por adulto ("os precos incluem os tributos e tarifas obrigatorios
+        // para 1 adulto"), entao a tarifa do grupo e a tarifa vezes o numero de viajantes.
+        // Sem isto o voo de duas pessoas entrava pela metade do preco no pacote.
+        var grupo = fare.get().multiply(criteria.travelers());
+
         // A pagina nao separa tributos de aeroporto nem bagagem despachada: ficam zero,
         // e inventar numero seria pior que admitir que nao sabemos.
-        return Optional.of(new FlightOffer("google-flights-" + index, airline(text), fare.get(),
+        return Optional.of(new FlightOffer("google-flights-" + index, airline(text), grupo,
             ZERO, ZERO, legs(text, criteria), 0.9));
     }
 

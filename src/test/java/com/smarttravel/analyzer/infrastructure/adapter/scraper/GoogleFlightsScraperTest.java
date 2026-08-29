@@ -58,6 +58,17 @@ class GoogleFlightsScraperTest {
         assertThat(signatures).doesNotHaveDuplicates();
     }
 
+    @Test void theFareCoversEveryTravellerNotJustOne() {
+        // A propria pagina avisa: "os precos incluem os tributos e tarifas obrigatorios para 1 adulto".
+        // Sem multiplicar, o voo de 2 pessoas entrava pela metade e o pacote saia barato demais.
+        var umAdulto = new SearchCriteria("MGF", "FLN", LocalDate.of(2026, 11, 7), LocalDate.of(2026, 11, 14), 1, false, false);
+        var doisAdultos = new SearchCriteria("MGF", "FLN", LocalDate.of(2026, 11, 7), LocalDate.of(2026, 11, 14), 2, false, false);
+        var html = Fixtures.read("google-flights-mgf-fln");
+        var sozinho = new GoogleFlightsScraper(null, null).parse(html, umAdulto).getFirst();
+        var casal = new GoogleFlightsScraper(null, null).parse(html, doisAdultos).getFirst();
+        assertThat(casal.rawFare().amount()).isEqualByComparingTo(sozinho.rawFare().amount().multiply(java.math.BigDecimal.TWO));
+    }
+
     @Test void declaresItselfAsRealDataNotDemo() {
         assertThat(new GoogleFlightsScraper(null, null).isDemo()).isFalse();
     }

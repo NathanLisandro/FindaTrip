@@ -72,6 +72,32 @@ class AirbnbScraperTest {
         assertThat(offers()).allSatisfy(offer -> assertThat(offer.stayTotal().currency()).isEqualTo(Money.BRL));
     }
 
+    @Test void everyOfferSaysItCameFromAirbnb() {
+        assertThat(offers()).allSatisfy(offer -> assertThat(offer.source()).isEqualTo("Airbnb"));
+    }
+
+    @Test void everyOfferCarriesTheLinkToItsOwnListing() {
+        assertThat(offers()).allSatisfy(offer ->
+            assertThat(offer.url()).startsWith("https://www.airbnb.com.br/rooms/"));
+    }
+
+    @Test void theListingLinkKeepsTheDatesAndGuestsOfTheSearch() {
+        assertThat(offers().getFirst().url()).contains("check_in=2026-11-07").contains("adults=2");
+    }
+
+    @Test void dropsListingsTheSiteRepricedForOtherDates() {
+        // O Airbnb mistura, no meio dos resultados, anuncios INDISPONIVEIS no periodo pedido,
+        // mostrando datas proximas ("check_in=2026-11-05"). Aceitar isso e precificar 6 noites
+        // de outra data como se fossem as 7 noites que o usuario pediu.
+        assertThat(offers()).allSatisfy(offer -> assertThat(offer.url())
+            .contains("check_in=2026-11-07").contains("check_out=2026-11-14"));
+    }
+
+    @Test void neverDoublesTheHostWhenTheSiteOmitsTheScheme() {
+        assertThat(offers()).allSatisfy(offer ->
+            assertThat(offer.url()).doesNotContain("com.brwww"));
+    }
+
     @Test void declaresItselfAsRealDataNotDemo() {
         assertThat(new AirbnbScraper(null, null).isDemo()).isFalse();
     }
