@@ -1,0 +1,13 @@
+nome: kayak
+tipo: spa
+url_busca: "https://www.kayak.com.br/hotels/{cidade},Brasil/{entrada}/{saida}/{adultos}adults"
+espera: "div[role='group'][aria-describedby]"
+rate_limit_ms: 8000
+seletores:
+  # As classes do Kayak sao ofuscadas e mudam a cada deploy. O role=group com a descricao
+  # de acessibilidade e o que sobrevive: nome, estrelas, bairro, nota e avaliacoes numa frase.
+  card: "div[role='group'][aria-describedby]"
+  descricao: "[id^='result-card-description']"
+  provedor: "img[alt]"
+_meta:
+  verificado_em: 2026-08-29
