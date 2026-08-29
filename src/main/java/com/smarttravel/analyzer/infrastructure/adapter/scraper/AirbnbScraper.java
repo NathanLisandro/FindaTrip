@@ -75,12 +75,17 @@ public class AirbnbScraper implements LodgingProviderPort {
             ZERO, ZERO, ZERO, rating(body), Set.copyOf(amenities), 0));
     }
 
-    /** Anuncio novo nao tem nota. Zero avaliacoes e o que o rating bayesiano ja sabe tratar. */
+    /**
+     * O Airbnb pontua de 0 a 5; o dominio e o Booking usam 0 a 10.
+     * Sem converter, um anuncio 4,92 (excelente) competiria como se fosse 4,92 de 10,
+     * e o ranking inteiro sairia torto entre fontes.
+     * Anuncio novo nao tem nota: zero avaliacoes e o que o rating bayesiano ja sabe tratar.
+     */
     private static HotelRating rating(String body) {
         var matcher = RATING.matcher(body);
         if (!matcher.find()) return new HotelRating(0, 0);
-        return new HotelRating(Double.parseDouble(matcher.group(1).replace(',', '.')),
-                               Integer.parseInt(matcher.group(2)));
+        double outOfFive = Double.parseDouble(matcher.group(1).replace(',', '.'));
+        return new HotelRating(outOfFive * 2, Integer.parseInt(matcher.group(2)));
     }
 
     private static String text(Element card, String selector) {
