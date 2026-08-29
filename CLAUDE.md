@@ -21,9 +21,26 @@ mvn spring-boot:run
 
 Não há Maven Wrapper no repositório — use o `mvn` do sistema.
 
-> **Atenção:** hoje `mvn test` termina com `Tests run: 0`. O `pom.xml` não fixa a versão do
-> `maven-surefire-plugin`, então o Maven usa a 2.12.4 do super-POM, que não enxerga JUnit 5 —
-> `TravelDomainServicesTest` nunca roda. Corrigir isso é pré-requisito do TDD (ver Pendências).
+Suíte atual: **81 testes**, todos verdes.
+
+---
+
+## Estado do projeto
+
+O buscador funciona de ponta a ponta. A API é assíncrona, em dois passos:
+
+- `POST /api/search` — recebe origem, destino, datas e preferências, cria a sessão de busca e
+  devolve o `searchId` na hora. A busca roda em background.
+- `GET /api/search/{id}` — devolve o estado (`BUSCANDO`, `PRONTO`, `PARCIAL`, `ERRO`), a saúde de
+  cada fonte, até três pacotes recomendados distintos, o resumo por bairro e a explicação da
+  escolha. Aceita os filtros como query params — filtrar é uma nova leitura, não uma nova busca.
+
+O front (`src/main/resources/static/`) está inteiro em português e consome essa API com polling.
+
+**Os dados são de demonstração.** `DemoFlightProvider`, `DemoLodgingProvider` e
+`DemoCarRentalProvider` geram ofertas plausíveis sem tocar na rede, e a tela diz isso ao usuário
+numa faixa que **não é enfeite**: um buscador que mostra preço inventado sem avisar é pior que não
+existir. Não remova a marca antes de existir fonte real.
 
 ---
 
@@ -53,6 +70,42 @@ Regras que valem para todo código novo:
 - Nada de setter, nada de entidade anêmica com lógica no service: se o cálculo é do
   objeto, ele mora no objeto (`LodgingOffer.normalize()`,
   `CarRentalOffer.normalizeWithFullInsurance()`).
+
+---
+
+## Nota de preço sem histórico
+
+`PackageAssemblerDomainService` precisa de um `RoutePriceTrend` para transformar preço em nota, e
+não existe histórico coletado — o coletor da etapa 1 ainda não roda. Então a tendência é calculada
+**sobre os próprios candidatos daquela busca**: monta um `PriceHistoryPoint` por combinação e
+manda para o `PriceTrendDomainService`. O pacote mais barato que a média do conjunto pontua acima
+de 70, o mais caro abaixo.
+
+Isso é honesto — compara o que está na tela, não um número inventado — mas é uma nota **relativa
+à busca**, não ao histórico da rota. "Bom preço" aqui significa "bom entre os que achamos hoje".
+
+Quando o coletor existir, troca-se só a origem da tendência (`trendOver`) por uma consulta ao
+`PriceHistoryStorePort`. O resto do assembler não muda.
+
+---
+
+## Candidatos ≠ recomendações
+
+Regra de desenho fácil de quebrar sem perceber, e o motivo da Task 13.5 do plano:
+
+**Filtros e resumo por bairro trabalham sobre `session.candidates()` — todos os pacotes montados —
+NUNCA sobre `session.packages()`, que são só as três recomendações finais.**
+
+Se alguém filtrar sobre `packages()`, duas coisas quebram de uma vez:
+
+- os chips de bairro degeneram: 3 pacotes rendem no máximo 3 bairros, quase sempre 1, e a
+  funcionalidade nasce inútil;
+- os filtros passam a **aparar** o resultado em vez de **reescolher**: marcar "só voo direto"
+  devolve o que sobrou dos 3 já escolhidos, não os 3 melhores pacotes com voo direto.
+
+A ordem correta em `GetSearchResultUseCase` é: filtrar os candidatos → chamar o
+`PackageBundlerDomainService` sobre o que sobrou → resumir os bairros a partir dos candidatos (não
+dos filtrados, senão as opções somem conforme o usuário clica).
 
 ---
 
@@ -113,17 +166,30 @@ ser armazenada. Fonte que exige atribuição nunca produz `ImageRef` com `atribu
 | Etapa | Entrega | Estado |
 |---|---|---|
 | 0 | 30 min medindo o Duffel: CWB→GRU e CWB→REC, quantas das três cias aparecem | manual, fora do código |
-| 1 | `adapter/scraper` com Booking + coletor de preços rodando | **próximo** |
+| P | **Produto inteiro com dados de demonstração**: montagem de pacote, filtros no servidor, explicação da escolha, busca assíncrona, API e front em português | **concluída** |
+| 1 | Primeira fonte real: `adapter/scraper` com Booking + coletor de preços rodando | **próximo** |
 | 2 | `domain/cost` — TrueCostEngine | |
 | 3 | Mais scrapers: Google Flights, um site de cia aérea | |
 | 4 | `domain/stay` — dedup entre fontes | |
 | 5 | `domain/trip` — Pareto + diversificação | |
-| 6 | API REST + front React | |
+| 6 | API REST + front React | parcial: API e front estático prontos |
 | 7 | Airbnb, proxy de imagem, alerta no Telegram | |
+
+A etapa P entregou o esqueleto todo funcionando; o que falta é preço de verdade dentro dele.
+
+**Conectar a primeira fonte real é trocar quem implementa a porta.** Os providers de demonstração
+são `@Component` em `infrastructure/adapter/demo/`, descobertos por component scan. "Substituir"
+significa fazer o adaptador real implementar a mesma porta (`FlightProviderPort`,
+`LodgingProviderPort`, `CarRentalProviderPort`) e tirar o `Demo*` do caminho — removendo o
+`@Component` dele, marcando o real como `@Primary`, ou registrando ambos à mão em `BeanConfig`.
+Nada acima da porta muda: `SearchRunner`, assembler, filtros e front não sabem a diferença. É
+exatamente para isso que a porta existe — se conectar a fonte real exigir mexer em domínio ou
+aplicação, algo foi desenhado errado.
 
 **A etapa 1 tem relógio correndo.** Sem API de afiliado, os dois gráficos dependem 100%
 da coleta própria: o coletor precisa começar a gravar série agora, ou não há gráfico
-nenhum por 60 dias.
+nenhum por 60 dias. Enquanto ele não existir, a nota de preço continua relativa à busca
+(ver acima).
 
 ---
 
@@ -131,10 +197,10 @@ nenhum por 60 dias.
 
 - `pom.xml` ainda não tem SnakeYAML, Jsoup nem Playwright — entram com a etapa 1.
 - Não há `mvnw` versionado; considere adicionar o wrapper para fixar a versão do Maven.
-- **`maven-surefire-plugin` sem versão fixada no `pom.xml`**: a 2.12.4 do super-POM ignora
-  JUnit 5 e a suíte inteira passa em branco (`Tests run: 0`). Fixar em 3.5.x antes de
-  escrever qualquer teste novo.
 - `InMemoryPriceHistoryStoreAdapter` devolve dado fixo de exemplo; é stub, não fonte.
+- As ofertas são geradas pelos `Demo*Provider`. Nenhum preço no app é real hoje.
+- `SearchSessionStore` é um mapa em memória com TTL de 30 min: reiniciar o app perde as buscas em
+  andamento. Aceitável para uso pessoal, não para mais de uma instância.
 - Nomenclatura: a spec fala em `StayOffer`/`StayOfferProvider`, o código tem
   `LodgingOffer`/`LodgingProviderPort`. **Mantenha os nomes do código** e trate os da
   spec como sinônimos, ou renomeie tudo de uma vez num commit isolado — não misture.
