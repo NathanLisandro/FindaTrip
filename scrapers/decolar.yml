@@ -4,7 +4,7 @@ tipo: spa
 # pelo lado do cliente passa — e como um usuario de verdade chega ate aqui.
 entrada: "https://www.decolar.com/voos/"
 url_busca: "https://www.decolar.com/shop/flights/results/roundtrip/{origem}/{destino}/{ida}/{volta}/{adultos}/0/0"
-espera: ".itineraries-container"
+espera: ".itineraries-container.border-top-complete"
 rate_limit_ms: 8000
 seletores:
   card: ".itineraries-container.border-top-complete"

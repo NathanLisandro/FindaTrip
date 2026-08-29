@@ -33,8 +33,21 @@ public class SearchController {
             @RequestParam(defaultValue = "false") boolean directFlightOnly,
             @RequestParam(defaultValue = "false") boolean breakfastIncluded,
             @RequestParam(defaultValue = "false") boolean freeCancellation,
-            @RequestParam(required = false) String neighborhood) {
-        var filter = new PackageFilter(maxPrice, minRating, directFlightOnly, breakfastIncluded, freeCancellation, neighborhood);
+            @RequestParam(required = false) String neighborhood,
+            @RequestParam(required = false) java.util.List<String> stayTypes) {
+        var filter = new PackageFilter(maxPrice, minRating, directFlightOnly, breakfastIncluded,
+            freeCancellation, neighborhood, tipos(stayTypes));
         return getResult.result(searchId, filter).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /** Tipo desconhecido e ignorado em vez de derrubar a busca com 400. */
+    private static java.util.Set<com.smarttravel.analyzer.domain.model.lodging.StayType> tipos(java.util.List<String> nomes) {
+        if (nomes == null) return java.util.Set.of();
+        var conjunto = java.util.EnumSet.noneOf(com.smarttravel.analyzer.domain.model.lodging.StayType.class);
+        for (var nome : nomes) {
+            try { conjunto.add(com.smarttravel.analyzer.domain.model.lodging.StayType.valueOf(nome)); }
+            catch (IllegalArgumentException desconhecido) { /* ignora */ }
+        }
+        return conjunto;
     }
 }

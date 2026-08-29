@@ -23,7 +23,7 @@ class TravelPackageTest {
     private static PackagePart<LodgingOffer> lodgingPart() {
         var offer = new LodgingOffer("lo-1", "Pousada Boa Vista", "Boa Viagem", Money.brl("600.00"), 3, Money.brl("30.00"),
             Money.brl("20.00"), Money.brl("0.00"), new HotelRating(8.9, 2000),
-            Set.of(Amenity.BREAKFAST_INCLUDED), 1.0, "Booking.com", "https://www.booking.com/hotel/br/teste.html", null);
+            Set.of(Amenity.BREAKFAST_INCLUDED), 1.0, "Booking.com", "https://www.booking.com/hotel/br/teste.html", null, StayType.HOTEL);
         return new PackagePart<>(offer, offer.normalize());
     }
 

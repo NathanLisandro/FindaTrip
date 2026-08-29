@@ -62,15 +62,22 @@ public class PlaywrightPageFetcher implements PageFetcherPort {
                 }
                 page.waitForTimeout(6000);
                 page.evaluate("destino => { window.location.href = destino; }", url);
-                // A busca da Decolar leva ~22s para pintar os resultados; com menos, a pagina
-                // volta vazia e a fonte parece morta sem ter sido bloqueada.
-                page.waitForTimeout(22000);
+
+                // Esperar o RESULTADO aparecer, nao um tempo fixo. A Decolar leva de 15 a 40
+                // segundos conforme a hora do dia; com espera fixa a fonte parecia bloqueada
+                // quando estava apenas lenta, e devolvia zero em silencio.
                 if (waitForSelector != null && !waitForSelector.isBlank()) {
                     try {
-                        page.waitForSelector(waitForSelector, new Page.WaitForSelectorOptions().setTimeout(15000));
-                    } catch (PlaywrightException ignorado) {
-                        // quem decide se o HTML serve e o parser
+                        page.waitForSelector(waitForSelector,
+                            new Page.WaitForSelectorOptions().setTimeout(timeout.toMillis()));
+                        // ja apareceu o primeiro; da tempo de pintar o resto da lista
+                        page.waitForTimeout(6000);
+                    } catch (PlaywrightException naoApareceu) {
+                        // Ultimo recurso: talvez o seletor tenha mudado, mas a pagina tenha algo.
+                        page.waitForTimeout(12000);
                     }
+                } else {
+                    page.waitForTimeout(20000);
                 }
                 page.mouse().wheel(0, 2000);
                 page.waitForTimeout(5000);

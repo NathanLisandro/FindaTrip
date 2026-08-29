@@ -25,7 +25,7 @@ class PackageFilterDomainServiceTest {
             Money.brl("0.00"), legs == 1 ? List.of(leg) : List.of(leg, leg), .9,
             java.time.LocalTime.of(8, 0), java.time.LocalTime.of(11, 30), java.time.Duration.ofMinutes(210));
         var lodgingOffer = new LodgingOffer(id + "-l", "Hotel " + id, neighborhood, Money.brl("100.00"), 1, Money.brl("0.00"),
-            Money.brl("0.00"), Money.brl("0.00"), new HotelRating(rating, 500), amenities, 1.0, "Booking.com", "https://www.booking.com/hotel/br/teste.html", null);
+            Money.brl("0.00"), Money.brl("0.00"), new HotelRating(rating, 500), amenities, 1.0, "Booking.com", "https://www.booking.com/hotel/br/teste.html", null, StayType.HOTEL);
         return new TravelPackage(id, Money.brl(total), new Score(80), new Score(80), new Score(80), null,
             new PackagePart<>(flightOffer, flightOffer.normalize(false)),
             new PackagePart<>(lodgingOffer, lodgingOffer.normalize()), null);
@@ -41,42 +41,59 @@ class PackageFilterDomainServiceTest {
     }
 
     @Test void maxPriceDropsPackagesAboveTheCeiling() {
-        var filter = new PackageFilter(new BigDecimal("1000.00"), null, false, false, false, null);
+        var filter = new PackageFilter(new BigDecimal("1000.00"), null, false, false, false, null, java.util.Set.of());
         assertThat(filters.apply(ALL, filter)).containsExactly(CHEAP_DIRECT);
     }
 
     @Test void minRatingDropsPackagesBelowTheFloor() {
-        var filter = new PackageFilter(null, 8.5, false, false, false, null);
+        var filter = new PackageFilter(null, 8.5, false, false, false, null, java.util.Set.of());
         assertThat(filters.apply(ALL, filter)).containsExactly(CHEAP_DIRECT);
     }
 
     @Test void directFlightOnlyDropsPackagesWithConnections() {
-        var filter = new PackageFilter(null, null, true, false, false, null);
+        var filter = new PackageFilter(null, null, true, false, false, null, java.util.Set.of());
         assertThat(filters.apply(ALL, filter)).containsExactly(CHEAP_DIRECT);
     }
 
     @Test void breakfastFilterKeepsOnlyLodgingWithBreakfast() {
-        var filter = new PackageFilter(null, null, false, true, false, null);
+        var filter = new PackageFilter(null, null, false, true, false, null, java.util.Set.of());
         assertThat(filters.apply(ALL, filter)).containsExactly(CHEAP_DIRECT);
     }
 
     @Test void freeCancellationFilterKeepsOnlyFlexibleLodging() {
-        var filter = new PackageFilter(null, null, false, false, true, null);
+        var filter = new PackageFilter(null, null, false, false, true, null, java.util.Set.of());
         assertThat(filters.apply(ALL, filter)).containsExactly(PRICEY_STOPOVER);
     }
 
     @Test void combinedFiltersMayLeaveNothing() {
-        var filter = new PackageFilter(new BigDecimal("1000.00"), null, false, false, true, null);
+        var filter = new PackageFilter(new BigDecimal("1000.00"), null, false, false, true, null, java.util.Set.of());
+        assertThat(filters.apply(ALL, filter)).isEmpty();
+    }
+
+    @Test void stayTypeFilterKeepsOnlyThatKindOfPlace() {
+        var filter = new PackageFilter(null, null, false, false, false, null,
+            java.util.Set.of(com.smarttravel.analyzer.domain.model.lodging.StayType.HOTEL));
+        assertThat(filters.apply(ALL, filter)).containsExactlyElementsOf(ALL);
+    }
+
+    @Test void anEmptyStayTypeSetMeansAnyKindNotNone() {
+        var filter = new PackageFilter(null, null, false, false, false, null, java.util.Set.of());
+        assertThat(filters.apply(ALL, filter)).containsExactlyElementsOf(ALL);
+    }
+
+    @Test void aStayTypeNobodyOffersLeavesNothing() {
+        var filter = new PackageFilter(null, null, false, false, false, null,
+            java.util.Set.of(com.smarttravel.analyzer.domain.model.lodging.StayType.HOSTEL));
         assertThat(filters.apply(ALL, filter)).isEmpty();
     }
 
     @Test void neighborhoodFilterKeepsOnlyPackagesInThatNeighborhood() {
-        var filter = new PackageFilter(null, null, false, false, false, "Boa Viagem");
+        var filter = new PackageFilter(null, null, false, false, false, "Boa Viagem", java.util.Set.of());
         assertThat(filters.apply(ALL, filter)).containsExactly(CHEAP_DIRECT);
     }
 
     @Test void neighborhoodFilterIgnoresAccentsAndCase() {
-        var filter = new PackageFilter(null, null, false, false, false, "boa viagem");
+        var filter = new PackageFilter(null, null, false, false, false, "boa viagem", java.util.Set.of());
         assertThat(filters.apply(ALL, filter)).containsExactly(CHEAP_DIRECT);
     }
 

@@ -56,8 +56,9 @@ class SearchControllerTest {
         mockMvc().perform(get("/api/search/{id}", id))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.demo").value(true))
-            .andExpect(jsonPath("$.packages.length()").value(org.hamcrest.Matchers.both(
-                org.hamcrest.Matchers.greaterThan(0)).and(org.hamcrest.Matchers.lessThanOrEqualTo(3))))
+            .andExpect(jsonPath("$.packages.length()").value(org.hamcrest.Matchers.greaterThan(3)))
+            .andExpect(jsonPath("$.packages[0].recommendationType").value("BEST_VALUE_OVERALL"))
+            .andExpect(jsonPath("$.totalMatching").value(org.hamcrest.Matchers.greaterThan(0)))
             .andExpect(jsonPath("$.packages[0].realCost").isNotEmpty())
             .andExpect(jsonPath("$.packages[0].advertisedPrice").isNotEmpty())
             .andExpect(jsonPath("$.packages[0].why").isNotEmpty())
@@ -119,6 +120,22 @@ class SearchControllerTest {
         var ids = java.util.regex.Pattern.compile("\"id\":\"([^\"]+)\"").matcher(body).results()
             .map(match -> match.group(1)).toList();
         org.assertj.core.api.Assertions.assertThat(ids).doesNotHaveDuplicates();
+    }
+
+    @Test void theResultOffersTheStayTypesFoundSoTheUserCanNarrowByKindOfPlace() throws Exception {
+        var id = startSearchAndWait();
+        mockMvc().perform(get("/api/search/{id}", id))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.stayTypes.length()").value(org.hamcrest.Matchers.greaterThan(0)))
+            .andExpect(jsonPath("$.stayTypes[0].label").isNotEmpty())
+            .andExpect(jsonPath("$.stayTypes[0].packages").isNumber());
+    }
+
+    @Test void filteringByAStayTypeNarrowsThePackagesButKeepsTheOptions() throws Exception {
+        var id = startSearchAndWait();
+        mockMvc().perform(get("/api/search/{id}", id).param("stayTypes", "HOSTEL"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.stayTypes.length()").value(org.hamcrest.Matchers.greaterThan(0)));
     }
 
     @Test void anUnknownSearchIdReturnsNotFound() throws Exception {

@@ -30,6 +30,24 @@ public class PackageBundlerDomainService {
         return List.copyOf(chosen);
     }
 
+    /**
+     * Os tres perfis na frente e o resto atras, por nota de custo-beneficio.
+     * Mostrar so tres escondia centenas de combinacoes boas; o usuario quer navegar
+     * a lista, com as escolhidas em destaque no topo.
+     */
+    public List<TravelPackage> rankedList(List<TravelPackage> candidates, int limite) {
+        var destaques = topRecommendations(candidates);
+        var jaEscolhidos = destaques.stream().map(TravelPackage::id).collect(java.util.stream.Collectors.toSet());
+        var resto = candidates.stream()
+            .filter(candidato -> !jaEscolhidos.contains(candidato.id()))
+            .sorted(BY_VALUE.reversed())
+            .limit(Math.max(0, limite - destaques.size()))
+            .toList();
+        var lista = new ArrayList<>(destaques);
+        lista.addAll(resto);
+        return List.copyOf(lista);
+    }
+
     private static void pick(List<TravelPackage> candidates, List<TravelPackage> chosen,
                              PackageBundleType type, java.util.function.Function<List<TravelPackage>, Optional<TravelPackage>> winner) {
         var remaining = candidates.stream().filter(candidate -> isNew(chosen, candidate)).toList();

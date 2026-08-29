@@ -15,7 +15,7 @@ import java.util.Set;
 public record LodgingOffer(String id, String name, String neighborhood, Money stayTotal, int nights,
                            Money serviceFees, Money cityTaxes, Money resortFees, HotelRating rating,
                            Set<Amenity> amenities, double distanceToAttractionsKm,
-                           String source, String url, String imageUrl) {
+                           String source, String url, String imageUrl, StayType type) {
 
     public static final String UNKNOWN_NEIGHBORHOOD = "Não informado";
 
@@ -23,6 +23,7 @@ public record LodgingOffer(String id, String name, String neighborhood, Money st
         amenities = Set.copyOf(amenities);
         neighborhood = (neighborhood == null || neighborhood.isBlank()) ? UNKNOWN_NEIGHBORHOOD : neighborhood.trim();
         source = (source == null || source.isBlank()) ? "Origem desconhecida" : source.trim();
+        type = type == null ? StayType.OUTRO : type;
     }
 
     /** O anuncio pode ser aberto direto? Oferta de demonstracao nao tem para onde levar. */

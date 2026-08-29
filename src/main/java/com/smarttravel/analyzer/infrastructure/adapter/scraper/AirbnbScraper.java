@@ -78,7 +78,7 @@ public class AirbnbScraper implements LodgingProviderPort {
         // O Airbnb nao publica bairro no card: passar null vira "Nao informado" no dominio,
         // que e a verdade. Deduzir bairro do titulo seria chute.
         return Optional.of(new LodgingOffer("airbnb-" + index, name, null, total.get(), nights,
-            ZERO, ZERO, ZERO, rating(body), Set.copyOf(amenities), 0, SOURCE, url, image(card)));
+            ZERO, ZERO, ZERO, rating(body), Set.copyOf(amenities), 0, SOURCE, url, image(card), StayType.fromText(name + " " + text(card, config.selector("titulo")))));
     }
 
     /**
