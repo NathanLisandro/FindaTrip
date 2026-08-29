@@ -62,7 +62,9 @@ public class PlaywrightPageFetcher implements PageFetcherPort {
                 }
                 page.waitForTimeout(6000);
                 page.evaluate("destino => { window.location.href = destino; }", url);
-                page.waitForTimeout(18000);
+                // A busca da Decolar leva ~22s para pintar os resultados; com menos, a pagina
+                // volta vazia e a fonte parece morta sem ter sido bloqueada.
+                page.waitForTimeout(22000);
                 if (waitForSelector != null && !waitForSelector.isBlank()) {
                     try {
                         page.waitForSelector(waitForSelector, new Page.WaitForSelectorOptions().setTimeout(15000));
@@ -71,7 +73,7 @@ public class PlaywrightPageFetcher implements PageFetcherPort {
                     }
                 }
                 page.mouse().wheel(0, 2000);
-                page.waitForTimeout(3000);
+                page.waitForTimeout(5000);
                 return page.content();
             }
         } catch (PlaywrightException falha) {

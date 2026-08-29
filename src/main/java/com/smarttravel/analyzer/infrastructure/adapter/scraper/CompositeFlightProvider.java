@@ -22,10 +22,16 @@ public class CompositeFlightProvider implements FlightProviderPort {
     @Override public List<FlightOffer> searchFlights(SearchCriteria criteria) {
         var offers = new ArrayList<FlightOffer>();
         for (var source : sources) {
+            var nome = source.getClass().getSimpleName();
             try {
-                offers.addAll(source.searchFlights(criteria));
+                var doFonte = source.searchFlights(criteria);
+                // Contar por fonte: sem isto, uma fonte que devolve zero passa despercebida,
+                // porque o total continua parecendo saudavel gracas as outras.
+                if (doFonte.isEmpty()) log.warn("Fonte de voo {} nao devolveu nenhuma oferta", nome);
+                else log.info("Fonte de voo {}: {} ofertas", nome, doFonte.size());
+                offers.addAll(doFonte);
             } catch (RuntimeException failure) {
-                log.warn("Fonte de voo {} falhou: {}", source.getClass().getSimpleName(), failure.getMessage());
+                log.warn("Fonte de voo {} falhou: {}", nome, failure.getMessage());
             }
         }
         return List.copyOf(offers);

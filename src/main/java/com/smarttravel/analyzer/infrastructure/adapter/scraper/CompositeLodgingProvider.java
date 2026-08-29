@@ -25,10 +25,16 @@ public class CompositeLodgingProvider implements LodgingProviderPort {
     @Override public List<LodgingOffer> searchLodging(SearchCriteria criteria) {
         var offers = new ArrayList<LodgingOffer>();
         for (var source : sources) {
+            var nome = source.getClass().getSimpleName();
             try {
-                offers.addAll(source.searchLodging(criteria));
+                var doFonte = source.searchLodging(criteria);
+                // Contar por fonte: sem isto, uma fonte que devolve zero passa despercebida,
+                // porque o total continua parecendo saudavel gracas as outras.
+                if (doFonte.isEmpty()) log.warn("Fonte de hospedagem {} nao devolveu nenhuma oferta", nome);
+                else log.info("Fonte de hospedagem {}: {} ofertas", nome, doFonte.size());
+                offers.addAll(doFonte);
             } catch (RuntimeException failure) {
-                log.warn("Fonte de hospedagem {} falhou: {}", source.getClass().getSimpleName(), failure.getMessage());
+                log.warn("Fonte de hospedagem {} falhou: {}", nome, failure.getMessage());
             }
         }
         return List.copyOf(offers);
