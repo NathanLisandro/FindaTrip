@@ -3,3 +3,9 @@ target/
 .idea/
 .vscode/
 .DS_Store
+
+# cache de HTML dos scrapers
+.cache/
+# build do front em React
+front/node_modules/
+front/dist/
