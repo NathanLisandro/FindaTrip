@@ -26,7 +26,7 @@ public class DemoLodgingProvider implements LodgingProviderPort {
             if (index % 2 == 0) amenities.add(Amenity.BREAKFAST_INCLUDED);
             if (index % 3 != 0) amenities.add(Amenity.FREE_FLEXIBLE_CANCELLATION);
             if (index % 3 == 0) amenities.add(Amenity.WALKABLE_ATTRACTIONS);
-            offers.add(new LodgingOffer("demo-lo-" + index, NAMES.get(index), NEIGHBORHOODS.get(index), money(110 + random.nextInt(320)), nights,
+            offers.add(new LodgingOffer("demo-lo-" + index, NAMES.get(index), NEIGHBORHOODS.get(index), money((110 + random.nextInt(320)) * nights), nights,
                 money(random.nextInt(60)), money(random.nextInt(35)), money(index % 4 == 0 ? 45 : 0),
                 new HotelRating(round(7.2 + random.nextDouble() * 2.6), 40 + random.nextInt(2400)),
                 Set.copyOf(amenities), round(random.nextDouble() * 4)));

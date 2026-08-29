@@ -6,7 +6,6 @@ import com.smarttravel.analyzer.domain.model.shared.*;
 import com.smarttravel.analyzer.domain.repository.LodgingProviderPort;
 import com.smarttravel.analyzer.domain.repository.PageFetcherPort;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -64,11 +63,10 @@ public class BookingScraper implements LodgingProviderPort {
         if (body.contains("Café da manhã incluído")) amenities.add(Amenity.BREAKFAST_INCLUDED);
         if (body.contains("Cancelamento grátis")) amenities.add(Amenity.FREE_FLEXIBLE_CANCELLATION);
 
-        var nightly = new Money(total.get().amount().divide(BigDecimal.valueOf(nights), 2, RoundingMode.HALF_UP), Money.BRL);
         var taxes = BrazilianText.money(text(card, "taxas")).orElse(new Money(BigDecimal.ZERO, Money.BRL));
         var zero = new Money(BigDecimal.ZERO, Money.BRL);
 
-        return Optional.of(new LodgingOffer("booking-" + index, name, neighborhood(card), nightly, nights,
+        return Optional.of(new LodgingOffer("booking-" + index, name, neighborhood(card), total.get(), nights,
             taxes, zero, zero, rating, Set.copyOf(amenities),
             BrazilianText.decimal(text(card, "distancia")).orElse(0)));
     }

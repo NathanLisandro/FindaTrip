@@ -37,7 +37,15 @@ entram por essa via, não como scraper próprio.
 3. **GoogleHotelsScraper** → `LodgingProviderPort` (traz o preço de vários sites por hotel)
 4. **AirbnbScraper** → `LodgingProviderPort`
 
-Fora desta rodada, com motivo: Decolar e Hoteis.com (bloqueio duro — entram via Google Hotels),
+**Google Hotels ficou de fora, e o motivo apareceu só ao ler a fixture:** a URL de busca
+(`/travel/search?q=hoteis+{cidade}`) **não carrega as datas**. O HTML capturado traz
+"1 noite, com tributos e taxas" e "28 – 29 de set." — preços de outro período. Levar as datas exige
+montar o parâmetro `ts=`, que é protobuf serializado, o mesmo problema do `tfs` do Google Voos que a
+v6 §3 já apontava. Mostrar preço da data errada é pior que não ter a fonte, então ela espera esse
+trabalho.
+
+Fora desta rodada, com motivo: Decolar e Hoteis.com (bloqueio duro — entram via Google Hotels,
+quando ele entrar),
 LATAM e Smiles diretos (exigem fluxo de formulário e login), site próprio do hotel (é um segundo
 salto a partir do nome, depois das quatro acima).
 
