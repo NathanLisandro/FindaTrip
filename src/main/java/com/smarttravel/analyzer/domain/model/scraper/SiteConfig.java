@@ -9,7 +9,11 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 public record SiteConfig(String name, String searchUrl, String waitFor,
-                         Map<String, String> selectors, int rateLimitMs, LocalDate verifiedOn) {
+                         Map<String, String> selectors, int rateLimitMs, LocalDate verifiedOn,
+                         String entryUrl) {
+
+    /** Alguns sites so servem a busca para quem chega navegando de outra pagina. */
+    public boolean needsEntryPage() { return entryUrl != null && !entryUrl.isBlank(); }
 
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{([a-zA-Z_]+)\\}");
     private static final int MAX_AGE_DAYS = 90;

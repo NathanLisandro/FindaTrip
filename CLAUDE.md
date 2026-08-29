@@ -146,7 +146,8 @@ baixe os navegadores do Playwright, são 1,4 GB inúteis).
 | Booking | funciona — `[data-testid=property-card]`, com bairro e taxas extras |
 | Airbnb | funciona — `[data-testid=card-container]` |
 | Google Hotels | **fora**: a URL de busca não carrega as datas, então os preços são de outro período |
-| Decolar, Hoteis.com | **bloqueiam** (403 e 429 com captcha), mesmo com Chrome real |
+| **Decolar** | funciona, mas **só entrando por outra página**: pedir a URL de resultados direto dá 403. O `entrada:` do YAML e o `fetchAfterVisiting` do fetcher existem por causa disso. Traz horário, duração e se a bagagem despachada está inclusa |
+| Hoteis.com | **bloqueia** (429 com captcha), mesmo com Chrome real |
 | LATAM, Smiles diretos | exigem fluxo de formulário e provavelmente login |
 | Locadoras | nenhuma raspada: o carro segue simulado, e a tela avisa por fonte |
 
@@ -155,6 +156,10 @@ Duffel pode entrar como fonte opcional de voo, atrás da mesma porta dos scraper
 Seletor CSS **NUNCA** fica em código Java — sempre no YAML do site.
 Todo scraper degrada com elegância: falha vira resultado parcial marcado, nunca exceção
 que sobe.
+
+**Preço por passageiro difere por fonte.** O Google Voos anuncia por adulto e o scraper
+multiplica pelo número de viajantes. A Decolar leva o número de passageiros na URL, então o preço
+já vem do grupo — multiplicar lá dobraria a conta. Cada scraper resolve isso na entrada.
 
 **A tarifa do Google Voos é por adulto.** A própria página avisa. O scraper multiplica pelo
 número de viajantes; sem isso a viagem de duas pessoas saía um voo mais barata. Passar

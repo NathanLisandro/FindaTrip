@@ -46,7 +46,8 @@ public class SiteConfigLoader {
                 (String) raw.get("espera"),
                 (Map<String, String>) raw.getOrDefault("seletores", Map.of()),
                 ((Number) raw.getOrDefault("rate_limit_ms", 4000)).intValue(),
-                verifiedOn);
+                verifiedOn,
+                (String) raw.get("entrada"));
         } catch (IOException failure) {
             throw new DomainException("Nao foi possivel ler " + path + ": " + failure.getMessage());
         }

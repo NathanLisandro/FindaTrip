@@ -46,6 +46,45 @@ public class PlaywrightPageFetcher implements PageFetcherPort {
         }
     }
 
+    @Override
+    public synchronized String fetchAfterVisiting(String entryUrl, String url, String waitForSelector, Duration timeout) {
+        try {
+            var context = novoContexto();
+            try (context) {
+                var page = context.newPage();
+                // A pagina de entrada pode ate falhar; o que importa e o contexto de navegacao
+                // que ela estabelece antes do salto pelo lado do cliente.
+                try {
+                    page.navigate(entryUrl, new Page.NavigateOptions()
+                        .setWaitUntil(WaitUntilState.DOMCONTENTLOADED).setTimeout(timeout.toMillis()));
+                } catch (PlaywrightException entradaFalhou) {
+                    // segue mesmo assim
+                }
+                page.waitForTimeout(6000);
+                page.evaluate("destino => { window.location.href = destino; }", url);
+                page.waitForTimeout(18000);
+                if (waitForSelector != null && !waitForSelector.isBlank()) {
+                    try {
+                        page.waitForSelector(waitForSelector, new Page.WaitForSelectorOptions().setTimeout(15000));
+                    } catch (PlaywrightException ignorado) {
+                        // quem decide se o HTML serve e o parser
+                    }
+                }
+                page.mouse().wheel(0, 2000);
+                page.waitForTimeout(3000);
+                return page.content();
+            }
+        } catch (PlaywrightException falha) {
+            throw new PageFetchException("Nao foi possivel carregar " + url + " via " + entryUrl, falha);
+        }
+    }
+
+    private BrowserContext novoContexto() {
+        return browser().newContext(new Browser.NewContextOptions()
+            .setLocale("pt-BR").setTimezoneId("America/Sao_Paulo")
+            .setViewportSize(1440, 900).setUserAgent(USER_AGENT));
+    }
+
     private Browser browser() {
         if (browser == null) {
             // Rodamos no Chrome do sistema (setChannel abaixo), entao nao ha por que baixar
