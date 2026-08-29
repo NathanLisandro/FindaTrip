@@ -20,6 +20,8 @@ import org.jsoup.nodes.Element;
  */
 public class DecolarFlightScraper implements FlightProviderPort {
 
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(DecolarFlightScraper.class);
+
     private static final String SITE = "decolar";
     private static final Path SCRAPERS = Path.of("scrapers");
     private static final Money ZERO = new Money(BigDecimal.ZERO, Money.BRL);
@@ -68,7 +70,11 @@ public class DecolarFlightScraper implements FlightProviderPort {
         // Itinerarios e precos vem em listas paralelas, na mesma ordem do documento.
         // Se as contagens divergirem, o layout mudou: melhor nao devolver nada do que
         // casar preco com o voo errado.
-        if (itinerarios.size() != precos.size()) return List.of();
+        if (itinerarios.size() != precos.size()) {
+            LOG.warn("Decolar: {} itinerarios para {} precos — layout mudou ou a pagina veio incompleta",
+                itinerarios.size(), precos.size());
+            return List.of();
+        }
 
         for (int i = 0; i < itinerarios.size(); i++) {
             toOffer(itinerarios.get(i), precos.get(i), i, criteria)
