@@ -40,7 +40,8 @@ class SearchControllerTest {
         mockMvc().perform(get("/api/search/{id}", id))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.demo").value(true))
-            .andExpect(jsonPath("$.packages.length()").value(3))
+            .andExpect(jsonPath("$.packages.length()").value(org.hamcrest.Matchers.both(
+                org.hamcrest.Matchers.greaterThan(0)).and(org.hamcrest.Matchers.lessThanOrEqualTo(3))))
             .andExpect(jsonPath("$.packages[0].realCost").isNotEmpty())
             .andExpect(jsonPath("$.packages[0].advertisedPrice").isNotEmpty())
             .andExpect(jsonPath("$.packages[0].why").isNotEmpty())
@@ -79,6 +80,29 @@ class SearchControllerTest {
         mockMvc().perform(get("/api/search/{id}", id).param("maxPrice", "1"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.packages.length()").value(0));
+    }
+
+    @Test void aFilterPicksTheBestThreeAmongMatchingCandidatesInsteadOfTrimmingTheFinalThree() throws Exception {
+        var id = startSearch();
+        mockMvc().perform(get("/api/search/{id}", id).param("directFlightOnly", "true"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.packages.length()").value(org.hamcrest.Matchers.greaterThan(1)))
+            .andExpect(jsonPath("$.packages[*].stops").value(org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is(0))));
+    }
+
+    @Test void theNeighborhoodOptionsComeFromEveryCandidateNotJustTheThreeRecommendations() throws Exception {
+        var id = startSearch();
+        mockMvc().perform(get("/api/search/{id}", id))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.neighborhoods.length()").value(org.hamcrest.Matchers.greaterThan(2)));
+    }
+
+    @Test void noRecommendationIsRepeatedUnderTwoDifferentLabels() throws Exception {
+        var id = startSearch();
+        var body = mockMvc().perform(get("/api/search/{id}", id)).andReturn().getResponse().getContentAsString();
+        var ids = java.util.regex.Pattern.compile("\"id\":\"([^\"]+)\"").matcher(body).results()
+            .map(match -> match.group(1)).toList();
+        org.assertj.core.api.Assertions.assertThat(ids).doesNotHaveDuplicates();
     }
 
     @Test void anUnknownSearchIdReturnsNotFound() throws Exception {

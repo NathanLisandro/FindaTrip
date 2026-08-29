@@ -2957,6 +2957,35 @@ git commit -m "feat: rebuild the front end around the asynchronous search"
 
 ---
 
+### Task 13.5: Filtrar os candidatos antes de escolher os perfis (correção)
+
+Defeito encontrado ao verificar a Task 13 rodando de verdade. `session.packages()` guardava só as
+três recomendações finais, e tanto os filtros quanto o resumo por bairro trabalhavam sobre elas.
+
+Duas consequências: os chips de bairro mostravam no máximo 3 bairros, quase sempre 1 — a
+funcionalidade nascia inútil; e marcar "só voo direto" devolvia o que sobrasse dos 3 já escolhidos
+em vez dos 3 melhores pacotes com voo direto.
+
+Um terceiro defeito apareceu junto: `topRecommendations` devolvia sempre 3 entradas, e o mesmo
+pacote costuma vencer em mais de um perfil — então a tela mostrava o mesmo card repetido sob
+rótulos diferentes.
+
+**O que mudou:**
+- `SearchSession` guarda `candidates()` (todos os pacotes montados) além de `packages()`.
+- `GetSearchResultUseCase` filtra os candidatos e só então chama o bundler; o resumo por bairro
+  sai dos candidatos, para as opções não sumirem conforme o usuário filtra.
+- `PackageBundlerDomainService` devolve até três recomendações **distintas**: cada perfil leva o
+  melhor pacote ainda não escolhido. Com um só candidato, devolve um card, não três iguais.
+- As asserções de "exatamente 3 pacotes" em `SearchControllerTest` e `SearchRunnerTest` estavam
+  erradas: aceitavam a repetição como se fosse resultado. Viraram "de 1 a 3, sem id repetido".
+
+Coberto por `PackageBundlerDomainServiceTest` (6 testes) e três testes novos em
+`SearchControllerTest`. Verificado com a aplicação no ar: 4 bairros com contagem real
+(10, 5, 5, 5 opções), filtro por "centro" em minúsculo e sem acento achando "Centro", e três
+pacotes distintos com e sem filtro.
+
+---
+
 ### Task 14: Atualizar o CLAUDE.md e fechar
 
 **Files:**

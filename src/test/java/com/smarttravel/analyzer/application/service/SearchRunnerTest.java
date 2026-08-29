@@ -38,7 +38,8 @@ class SearchRunnerTest {
         var session = new SearchSession("s1", CRITERIA);
         healthyRunner().run(session);
         assertThat(session.status()).isEqualTo(SearchStatus.PRONTO);
-        assertThat(session.packages()).hasSize(3);
+        assertThat(session.packages()).isNotEmpty().hasSizeLessThanOrEqualTo(3)
+            .extracting(pkg -> pkg.id()).doesNotHaveDuplicates();
     }
 
     @Test void aHealthySearchMarksEverySourceAsOk() {

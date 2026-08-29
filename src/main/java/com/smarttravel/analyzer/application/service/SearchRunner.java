@@ -58,11 +58,13 @@ public class SearchRunner {
 
         var candidates = assembler.assemble(effective, new TravelOffers(flightOffers, lodgingOffers, carOffers));
         if (candidates.isEmpty()) {
+            session.candidates(List.of());
             session.packages(List.of());
             session.status(SearchStatus.ERRO);
             return;
         }
 
+        session.candidates(candidates);
         session.packages(bundler.topRecommendations(candidates));
         boolean degraded = session.sources().stream().anyMatch(source -> source.health() == SourceHealth.DEGRADADO);
         session.status(degraded ? SearchStatus.PARCIAL : SearchStatus.PRONTO);
