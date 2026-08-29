@@ -21,7 +21,7 @@ public class StartSearchUseCase {
 
     public String start(SearchCriteriaRequest request) {
         var session = store.create(request.toDomain());
-        executor.execute(() -> runner.run(session));
+        executor.execute(() -> runner.run(session, request.flexibleDates()));
         return session.id();
     }
 }

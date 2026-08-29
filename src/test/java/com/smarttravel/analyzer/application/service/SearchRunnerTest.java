@@ -26,7 +26,8 @@ class SearchRunnerTest {
     private static SearchRunner runner(FlightProviderPort flights, LodgingProviderPort lodgings, CarRentalProviderPort cars) {
         var scoring = new ValueScoringDomainService();
         var assembler = new PackageAssemblerDomainService(new CostNormalizerDomainService(), scoring, new PriceTrendDomainService());
-        return new SearchRunner(flights, lodgings, cars, assembler, new PackageBundlerDomainService());
+        var dateFlexibility = new DateFlexibilityService(flights, lodgings, cars, assembler);
+        return new SearchRunner(flights, lodgings, cars, assembler, new PackageBundlerDomainService(), dateFlexibility);
     }
 
     private static SearchRunner healthyRunner() {

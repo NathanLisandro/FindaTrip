@@ -18,17 +18,29 @@ public class SearchRunner {
     private final CarRentalProviderPort cars;
     private final PackageAssemblerDomainService assembler;
     private final PackageBundlerDomainService bundler;
+    private final DateFlexibilityService dateFlexibility;
 
     public SearchRunner(FlightProviderPort flights, LodgingProviderPort lodgings, CarRentalProviderPort cars,
-                        PackageAssemblerDomainService assembler, PackageBundlerDomainService bundler) {
+                        PackageAssemblerDomainService assembler, PackageBundlerDomainService bundler,
+                        DateFlexibilityService dateFlexibility) {
         this.flights = flights;
         this.lodgings = lodgings;
         this.cars = cars;
         this.assembler = assembler;
         this.bundler = bundler;
+        this.dateFlexibility = dateFlexibility;
     }
 
-    public void run(SearchSession session) {
+    public void run(SearchSession session) { run(session, false); }
+
+    public void run(SearchSession session, boolean flexibleDates) {
+        runSearch(session);
+        if (flexibleDates && session.status() != SearchStatus.ERRO) {
+            session.dateOptions(dateFlexibility.neighbouringDates(session.criteria()));
+        }
+    }
+
+    private void runSearch(SearchSession session) {
         var criteria = session.criteria();
         session.demo(flights.isDemo() && lodgings.isDemo() && cars.isDemo());
 
