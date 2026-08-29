@@ -1,15 +1,40 @@
 package com.smarttravel.analyzer.domain.service;
 
 import com.smarttravel.analyzer.domain.model.packagebundle.*;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 public class PackageBundlerDomainService {
+
+    private static final Comparator<TravelPackage> BY_VALUE =
+        Comparator.comparingDouble(candidate -> candidate.valueScore().value());
+    private static final Comparator<TravelPackage> BY_COMFORT =
+        Comparator.comparingDouble(candidate -> candidate.qualityScore().value() + candidate.convenienceScore().value());
+
+    /**
+     * Devolve ate tres recomendacoes distintas, uma por perfil.
+     * O mesmo pacote costuma vencer em mais de um perfil; mostrar o mesmo card tres vezes com
+     * rotulos diferentes engana. Entao cada perfil leva o melhor pacote que ainda nao foi escolhido.
+     */
     public List<TravelPackage> topRecommendations(List<TravelPackage> candidates) {
-        var best = candidates.stream().max(Comparator.comparingDouble(p -> p.valueScore().value())).orElseThrow();
-        var budget = candidates.stream().filter(TravelPackage::meetsSmartBudgetFloor).min(Comparator.comparing(p -> p.totalPrice())).orElse(best);
-        var comfort = candidates.stream().max(Comparator.comparingDouble(p -> p.qualityScore().value() + p.convenienceScore().value())).orElse(best);
-        return List.of(tag(best, PackageBundleType.BEST_VALUE_OVERALL), tag(budget, PackageBundleType.SMART_BUDGET), tag(comfort, PackageBundleType.MAX_COMFORT));
+        var chosen = new ArrayList<TravelPackage>();
+        pick(candidates, chosen, PackageBundleType.BEST_VALUE_OVERALL,
+            remaining -> remaining.stream().max(BY_VALUE));
+        pick(candidates, chosen, PackageBundleType.SMART_BUDGET,
+            remaining -> remaining.stream().filter(TravelPackage::meetsSmartBudgetFloor).min(Comparator.comparing(TravelPackage::totalPrice))
+                .or(() -> remaining.stream().min(Comparator.comparing(TravelPackage::totalPrice))));
+        pick(candidates, chosen, PackageBundleType.MAX_COMFORT,
+            remaining -> remaining.stream().max(BY_COMFORT));
+        return List.copyOf(chosen);
     }
-    private TravelPackage tag(TravelPackage p, PackageBundleType type) { return p.withRecommendationType(type); }
+
+    private static void pick(List<TravelPackage> candidates, List<TravelPackage> chosen,
+                             PackageBundleType type, java.util.function.Function<List<TravelPackage>, Optional<TravelPackage>> winner) {
+        var remaining = candidates.stream()
+            .filter(candidate -> chosen.stream().noneMatch(taken -> taken.id().equals(candidate.id())))
+            .toList();
+        winner.apply(remaining).ifPresent(pick -> chosen.add(pick.withRecommendationType(type)));
+    }
 }

@@ -15,6 +15,7 @@ public class SearchSession {
     private final List<SourceStatus> sources = new CopyOnWriteArrayList<>();
     private volatile SearchStatus status = SearchStatus.BUSCANDO;
     private volatile List<TravelPackage> packages = List.of();
+    private volatile List<TravelPackage> candidates = List.of();
     private volatile boolean demo;
     private volatile List<DateOption> dateOptions = List.of();
 
@@ -26,12 +27,15 @@ public class SearchSession {
     public SearchStatus status() { return status; }
     public List<SourceStatus> sources() { return List.copyOf(sources); }
     public List<TravelPackage> packages() { return packages; }
+    /** Todos os pacotes montados, antes de escolher os tres perfis. Filtros e bairros trabalham sobre esta lista. */
+    public List<TravelPackage> candidates() { return candidates; }
     public boolean demo() { return demo; }
     public List<DateOption> dateOptions() { return dateOptions; }
 
     public void addSource(SourceStatus source) { sources.add(source); }
     public void status(SearchStatus value) { this.status = value; }
     public void packages(List<TravelPackage> value) { this.packages = List.copyOf(value); }
+    public void candidates(List<TravelPackage> value) { this.candidates = List.copyOf(value); }
     public void demo(boolean value) { this.demo = value; }
     public void dateOptions(List<DateOption> value) { this.dateOptions = List.copyOf(value); }
 }
