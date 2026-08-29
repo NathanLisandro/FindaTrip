@@ -11,6 +11,7 @@ public class BeanConfig {
     @Bean ValueScoringDomainService valueScoringDomainService() { return new ValueScoringDomainService(); }
     @Bean CostNormalizerDomainService costNormalizerDomainService() { return new CostNormalizerDomainService(); }
     @Bean PackageFilterDomainService packageFilterDomainService() { return new PackageFilterDomainService(); }
+    @Bean PackageExplanationDomainService packageExplanationDomainService() { return new PackageExplanationDomainService(); }
 
     @Bean PackageAssemblerDomainService packageAssemblerDomainService(CostNormalizerDomainService normalizer, ValueScoringDomainService scoring, PriceTrendDomainService trends) {
         return new PackageAssemblerDomainService(normalizer, scoring, trends);
