@@ -17,7 +17,8 @@ class PackageExplanationDomainServiceTest {
     private static TravelPackage build(String id, String total, double rating, int reviews, double quality) {
         var flightOffer = new FlightOffer(id + "-f", new Airline("G3", "GOL"), Money.brl("800.00"), Money.brl("90.00"),
             Money.brl("0.00"), List.of(new FlightLeg(new Location("CWB", "Curitiba", "BR"),
-            new Location("REC", "Recife", "BR"), null, false, false)), .9);
+            new Location("REC", "Recife", "BR"), null, false, false)), .9,
+            java.time.LocalTime.of(8, 0), java.time.LocalTime.of(11, 30), java.time.Duration.ofMinutes(210));
         var lodgingOffer = new LodgingOffer(id + "-l", "Hotel " + id, "Centro", Money.brl("100.00"), 1, Money.brl("30.00"),
             Money.brl("0.00"), Money.brl("0.00"), new HotelRating(rating, reviews), Set.of(Amenity.BREAKFAST_INCLUDED), 1.0, "Booking.com", "https://www.booking.com/hotel/br/teste.html", null);
         return new TravelPackage(id, Money.brl(total), new Score(85), new Score(quality), new Score(80), null,

@@ -11,7 +11,7 @@ import java.util.Locale;
  */
 public final class ImageProxyPolicy {
 
-    private static final List<String> HOSTS = List.of("bstatic.com", "muscache.com");
+    private static final List<String> HOSTS = List.of("bstatic.com", "muscache.com", "images.kiwi.com");
 
     private ImageProxyPolicy() {}
 

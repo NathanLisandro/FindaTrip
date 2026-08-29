@@ -52,12 +52,31 @@ export function PackageCard({ pacote, destaque }) {
           ) : (
             <span className="pastilha pastilha--sem-nota">sem avaliações ainda</span>
           )}
-          <span className="pastilha">
-            ✈ {pacote.airline} · {pacote.stops === 0 ? 'direto' : `${pacote.stops} parada`}
-          </span>
           {pacote.carSupplier && (
             <span className="pastilha">🚗 {pacote.carSupplier} · {pacote.carCategory}</span>
           )}
+        </div>
+
+        <div className="voo">
+          {pacote.airlineLogo
+            ? <img className="voo__logo" src={pacote.airlineLogo} alt={pacote.airline} loading="lazy" />
+            : <span className="voo__logo voo__logo--vazio">✈</span>}
+          <div className="voo__horarios">
+            {pacote.departureTime && pacote.arrivalTime ? (
+              <>
+                <b>{pacote.departureTime}</b>
+                <span className="voo__traco" aria-hidden="true" />
+                <b>{pacote.arrivalTime}</b>
+              </>
+            ) : (
+              <b>{pacote.airline}</b>
+            )}
+          </div>
+          <div className="voo__detalhe">
+            <span>{pacote.airline}</span>
+            {pacote.duration && <span>· {pacote.duration}</span>}
+            <span>· {pacote.stops === 0 ? 'direto' : `${pacote.stops} parada${pacote.stops > 1 ? 's' : ''}`}</span>
+          </div>
         </div>
 
         {pacote.included.length > 0 && (

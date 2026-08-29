@@ -9,6 +9,7 @@ class ImageProxyPolicyTest {
     @Test void allowsTheImageHostsOfTheSourcesWeScrape() {
         assertThat(ImageProxyPolicy.allows("https://cf.bstatic.com/xdata/images/hotel/square240/1.webp")).isTrue();
         assertThat(ImageProxyPolicy.allows("https://a0.muscache.com/im/pictures/hosting/x.jpeg?im_w=720")).isTrue();
+        assertThat(ImageProxyPolicy.allows("https://images.kiwi.com/airlines/64/G3.png")).isTrue();
     }
 
     @Test void refusesAnythingElseSoItCannotBecomeAnOpenProxy() {

@@ -202,3 +202,29 @@ input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--realce); }
   .cartao__topo { flex-direction: column; }
   .cartao__preco { text-align: left; }
 }
+
+/* ---------- faixa do voo ---------- */
+.voo {
+  display: grid; grid-template-columns: 34px auto 1fr; align-items: center; gap: 12px;
+  background: var(--fundo-alto); border: 1px solid var(--borda-suave);
+  border-radius: 10px; padding: 10px 13px;
+}
+.voo__logo {
+  width: 34px; height: 34px; object-fit: contain;
+  background: #fff; border-radius: 7px; padding: 3px;
+}
+.voo__logo--vazio {
+  display: grid; place-items: center; background: var(--carta);
+  color: var(--fraco); font-size: 15px;
+}
+.voo__horarios { display: flex; align-items: center; gap: 9px; font-size: 15px; }
+.voo__horarios b { font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.voo__traco {
+  width: 34px; height: 1px; background: var(--borda);
+  position: relative;
+}
+.voo__traco::after {
+  content: '✈'; position: absolute; right: -4px; top: -9px;
+  font-size: 10px; color: var(--fraco);
+}
+.voo__detalhe { display: flex; flex-wrap: wrap; gap: 5px; font-size: 12.5px; color: var(--fraco); justify-self: end; }

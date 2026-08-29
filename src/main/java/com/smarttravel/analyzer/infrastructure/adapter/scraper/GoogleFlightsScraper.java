@@ -19,13 +19,19 @@ public class GoogleFlightsScraper implements FlightProviderPort {
     private static final Path SCRAPERS = Path.of("scrapers");
 
     /** A pagina escreve "Gol" e "LATAM"; o nome canonico e o desta lista. */
-    private static final List<String> AIRLINES = List.of("LATAM", "GOL", "Azul", "Voepass");
+    /** Nome como a pagina escreve -> codigo IATA, que e o que identifica o logo. */
+    private static final java.util.Map<String, String> AIRLINES = new java.util.LinkedHashMap<>(java.util.Map.of(
+        "LATAM", "LA", "GOL", "G3", "Azul", "AD", "Voepass", "2Z"));
     private static final Pattern STOPS = Pattern.compile("(\\d+)\\s+parada");
     /** "1 parada Parada de 5h 55 min" e tambem "1 parada 55 min", que a pagina usa nas escalas curtas. */
     private static final Pattern LAYOVER =
         Pattern.compile("parada[s]?\\s+(?:Parada de\\s+)?(?:(\\d+)\\s*h)?\\s*(?:(\\d+)\\s*min)");
     /** "1 parada em CGH" — o codigo do aeroporto de conexao. */
     private static final Pattern HUB = Pattern.compile("parada[s]?\\s+em\\s+([A-Z]{3})");
+    /** A pagina rotula os horarios: "Horario de partida: 06:20." */
+    private static final Pattern PARTIDA = Pattern.compile("Hor[aá]rio de partida:\\s*(\\d{1,2}):(\\d{2})");
+    private static final Pattern CHEGADA = Pattern.compile("Hor[aá]rio de chegada:\\s*(\\d{1,2}):(\\d{2})");
+    private static final Pattern DURACAO = Pattern.compile("Dura[cç][aã]o total:\\s*(?:(\\d+)\\s*h)?\\s*(?:(\\d+)\\s*min)?");
     private static final Money ZERO = new Money(BigDecimal.ZERO, Money.BRL);
 
     private final PageFetcherPort fetcher;
@@ -80,14 +86,31 @@ public class GoogleFlightsScraper implements FlightProviderPort {
 
         // A pagina nao separa tributos de aeroporto nem bagagem despachada: ficam zero,
         // e inventar numero seria pior que admitir que nao sabemos.
+        var rotulos = card.select("[aria-label]").eachAttr("aria-label").toString();
         return Optional.of(new FlightOffer("google-flights-" + index, airline(text), grupo,
-            ZERO, ZERO, legs(text, criteria), 0.9));
+            ZERO, ZERO, legs(text, criteria), 0.9,
+            hora(PARTIDA, rotulos), hora(CHEGADA, rotulos), duracao(rotulos)));
+    }
+
+    private static java.time.LocalTime hora(Pattern padrao, String rotulos) {
+        var m = padrao.matcher(rotulos);
+        if (!m.find()) return null;
+        return java.time.LocalTime.of(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)));
+    }
+
+    private static java.time.Duration duracao(String rotulos) {
+        var m = DURACAO.matcher(rotulos);
+        if (!m.find()) return null;
+        long h = m.group(1) == null ? 0 : Long.parseLong(m.group(1));
+        long min = m.group(2) == null ? 0 : Long.parseLong(m.group(2));
+        return (h == 0 && min == 0) ? null : java.time.Duration.ofHours(h).plusMinutes(min);
     }
 
     private Airline airline(String text) {
-        for (var name : AIRLINES) {
-            if (text.toLowerCase(Locale.ROOT).contains(name.toLowerCase(Locale.ROOT))) {
-                return new Airline(name.toUpperCase(Locale.ROOT), name);
+        var minusculo = text.toLowerCase(Locale.ROOT);
+        for (var entrada : AIRLINES.entrySet()) {
+            if (minusculo.contains(entrada.getKey().toLowerCase(Locale.ROOT))) {
+                return new Airline(entrada.getValue(), entrada.getKey());
             }
         }
         return new Airline("--", "Outra");
