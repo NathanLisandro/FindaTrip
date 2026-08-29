@@ -214,7 +214,100 @@ git commit -m "feat: switch the money flow to BRL and add Money.subtract"
 
 ---
 
-### Task 3: TravelPackage passa a carregar as ofertas que o compõem
+### Task 3: Bairro na hospedagem
+
+Para focar a busca num ponto do destino, a oferta precisa dizer onde fica. Hoje `LodgingOffer` só tem `distanceToAttractionsKm`, que não diz de onde. O bairro entra como campo da oferta — com fonte real ele vem junto do anúncio, e nada precisa ser cadastrado por cidade.
+
+**Files:**
+- Modify: `src/main/java/com/smarttravel/analyzer/domain/model/lodging/LodgingOffer.java`
+- Test: `src/test/java/com/smarttravel/analyzer/domain/model/lodging/LodgingOfferTest.java`
+
+**Interfaces:**
+- Consumes: `Money.brl` (Task 2)
+- Produces:
+  - `LodgingOffer(String id, String name, String neighborhood, Money nightlyRate, int nights, Money serviceFees, Money cityTaxes, Money resortFees, HotelRating rating, Set<Amenity> amenities, double distanceToAttractionsKm)` — `neighborhood` é o **terceiro** parâmetro, logo depois de `name`
+  - Bairro em branco ou nulo vira `"Não informado"`, nunca `null` — assim nenhum consumidor precisa de checagem de nulo
+
+- [ ] **Step 1: Escrever o teste falhando**
+
+Criar `src/test/java/com/smarttravel/analyzer/domain/model/lodging/LodgingOfferTest.java`:
+
+```java
+package com.smarttravel.analyzer.domain.model.lodging;
+
+import com.smarttravel.analyzer.domain.model.shared.Money;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+class LodgingOfferTest {
+
+    private static LodgingOffer offer(String neighborhood) {
+        return new LodgingOffer("lo-1", "Pousada Maré Alta", neighborhood, Money.brl("200.00"), 3,
+            Money.brl("30.00"), Money.brl("20.00"), Money.brl("0.00"), new HotelRating(8.5, 500),
+            Set.of(Amenity.BREAKFAST_INCLUDED), 1.0);
+    }
+
+    @Test void keepsTheNeighborhoodItWasGiven() {
+        assertThat(offer("Boa Viagem").neighborhood()).isEqualTo("Boa Viagem");
+    }
+
+    @Test void aMissingNeighborhoodBecomesAReadableLabelInsteadOfNull() {
+        assertThat(offer(null).neighborhood()).isEqualTo("Não informado");
+        assertThat(offer("   ").neighborhood()).isEqualTo("Não informado");
+    }
+
+    @Test void normalizationStillAddsEveryFeeOnTopOfTheNightlyRate() {
+        assertThat(offer("Boa Viagem").normalize().totalPrice().amount()).isEqualByComparingTo("650.00");
+    }
+}
+```
+
+- [ ] **Step 2: Rodar e ver falhar**
+
+Run: `mvn test -Dtest=LodgingOfferTest`
+Expected: erro de compilação — o construtor de `LodgingOffer` tem 10 parâmetros, não 11.
+
+- [ ] **Step 3: Implementar**
+
+Substituir a declaração e o construtor compacto em `LodgingOffer.java`:
+
+```java
+public record LodgingOffer(String id, String name, String neighborhood, Money nightlyRate, int nights,
+                           Money serviceFees, Money cityTaxes, Money resortFees, HotelRating rating,
+                           Set<Amenity> amenities, double distanceToAttractionsKm) {
+
+    public static final String UNKNOWN_NEIGHBORHOOD = "Não informado";
+
+    public LodgingOffer {
+        amenities = Set.copyOf(amenities);
+        neighborhood = (neighborhood == null || neighborhood.isBlank()) ? UNKNOWN_NEIGHBORHOOD : neighborhood.trim();
+    }
+```
+
+O restante do record (`normalize()` e `has()`) não muda.
+
+- [ ] **Step 4: Rodar e ver passar**
+
+Run: `mvn test -Dtest=LodgingOfferTest`
+Expected: PASS, 3 testes.
+
+- [ ] **Step 5: Rodar a suíte inteira**
+
+Run: `mvn test`
+Expected: PASS. Se algum arquivo de produção ainda construir `LodgingOffer` com 10 argumentos, o compilador aponta — acrescente o bairro no terceiro lugar.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add src/main/java src/test/java
+git commit -m "feat: record which neighborhood a lodging offer sits in"
+```
+
+---
+
+### Task 4: TravelPackage passa a carregar as ofertas que o compõem
 
 Hoje `TravelPackage` guarda id, preço total e três notas. Sem referência às ofertas, a tela não tem como mostrar qual hotel nem justificar a escolha, e não dá para calcular custo oculto.
 
@@ -262,7 +355,7 @@ class TravelPackageTest {
     }
 
     private static PackagePart<LodgingOffer> lodgingPart() {
-        var offer = new LodgingOffer("lo-1", "Pousada Boa Vista", Money.brl("200.00"), 3, Money.brl("30.00"),
+        var offer = new LodgingOffer("lo-1", "Pousada Boa Vista", "Boa Viagem", Money.brl("200.00"), 3, Money.brl("30.00"),
             Money.brl("20.00"), Money.brl("0.00"), new HotelRating(8.9, 2000),
             Set.of(Amenity.BREAKFAST_INCLUDED), 1.0);
         return new PackagePart<>(offer, offer.normalize());
@@ -399,7 +492,7 @@ git commit -m "feat: carry the underlying offers inside TravelPackage"
 
 ---
 
-### Task 4: Montar pacotes a partir das ofertas
+### Task 5: Montar pacotes a partir das ofertas
 
 Esta é a peça que falta no meio do domínio. `SearchBestValuePackagesUseCase` devolve três pacotes escritos à mão porque ninguém combina ofertas em candidatos.
 
@@ -453,7 +546,7 @@ class PackageAssemblerDomainServiceTest {
     }
 
     private static LodgingOffer lodging(String id, String nightly) {
-        return new LodgingOffer(id, "Hotel " + id, Money.brl(nightly), 3, Money.brl("30.00"), Money.brl("20.00"),
+        return new LodgingOffer(id, "Hotel " + id, "Boa Viagem", Money.brl(nightly), 3, Money.brl("30.00"), Money.brl("20.00"),
             Money.brl("0.00"), new HotelRating(8.5, 500), Set.of(Amenity.BREAKFAST_INCLUDED), 1.0);
     }
 
@@ -688,21 +781,24 @@ git commit -m "feat: assemble travel packages from flight, lodging and car offer
 
 ---
 
-### Task 5: Filtros no servidor
+### Task 6: Filtros no servidor
 
 Os filtros são regra de negócio. Se ficarem no JavaScript, viram duas implementações que divergem.
 
 **Files:**
 - Create: `src/main/java/com/smarttravel/analyzer/domain/model/search/PackageFilter.java`
+- Create: `src/main/java/com/smarttravel/analyzer/domain/model/search/NeighborhoodSummary.java`
 - Create: `src/main/java/com/smarttravel/analyzer/domain/service/PackageFilterDomainService.java`
 - Test: `src/test/java/com/smarttravel/analyzer/domain/service/PackageFilterDomainServiceTest.java`
 
 **Interfaces:**
 - Consumes: `TravelPackage` (Task 3)
 - Produces:
-  - `PackageFilter(BigDecimal maxPrice, Double minRating, boolean directFlightOnly, boolean breakfastIncluded, boolean freeCancellation)` — campos numéricos aceitam `null` (sem filtro)
+  - `PackageFilter(BigDecimal maxPrice, Double minRating, boolean directFlightOnly, boolean breakfastIncluded, boolean freeCancellation, String neighborhood)` — campos de objeto aceitam `null` (sem filtro)
   - `PackageFilter.none()` → `PackageFilter` com tudo desligado
+  - `NeighborhoodSummary(String neighborhood, int packages, Money cheapest)`
   - `PackageFilterDomainService.apply(List<TravelPackage>, PackageFilter)` → `List<TravelPackage>`
+  - `PackageFilterDomainService.summarise(List<TravelPackage>)` → `List<NeighborhoodSummary>`, ordenado do bairro mais barato para o mais caro
 
 - [ ] **Step 1: Escrever o teste falhando**
 
@@ -714,6 +810,7 @@ package com.smarttravel.analyzer.domain.service;
 import com.smarttravel.analyzer.domain.model.flight.*;
 import com.smarttravel.analyzer.domain.model.lodging.*;
 import com.smarttravel.analyzer.domain.model.packagebundle.*;
+import com.smarttravel.analyzer.domain.model.search.NeighborhoodSummary;
 import com.smarttravel.analyzer.domain.model.search.PackageFilter;
 import com.smarttravel.analyzer.domain.model.shared.*;
 import java.math.BigDecimal;
@@ -728,20 +825,20 @@ class PackageFilterDomainServiceTest {
 
     private final PackageFilterDomainService filters = new PackageFilterDomainService();
 
-    private static TravelPackage build(String id, String total, double rating, int legs, Set<Amenity> amenities) {
+    private static TravelPackage build(String id, String total, double rating, int legs, Set<Amenity> amenities, String neighborhood) {
         var leg = new FlightLeg(new Location("CWB", "Curitiba", "BR"), new Location("REC", "Recife", "BR"),
             Duration.ofHours(2), false, false);
         var flightOffer = new FlightOffer(id + "-f", new Airline("G3", "GOL"), Money.brl("800.00"), Money.brl("0.00"),
             Money.brl("0.00"), legs == 1 ? List.of(leg) : List.of(leg, leg), .9);
-        var lodgingOffer = new LodgingOffer(id + "-l", "Hotel " + id, Money.brl("100.00"), 1, Money.brl("0.00"),
+        var lodgingOffer = new LodgingOffer(id + "-l", "Hotel " + id, neighborhood, Money.brl("100.00"), 1, Money.brl("0.00"),
             Money.brl("0.00"), Money.brl("0.00"), new HotelRating(rating, 500), amenities, 1.0);
         return new TravelPackage(id, Money.brl(total), new Score(80), new Score(80), new Score(80), null,
             new PackagePart<>(flightOffer, flightOffer.normalize(false)),
             new PackagePart<>(lodgingOffer, lodgingOffer.normalize()), null);
     }
 
-    private static final TravelPackage CHEAP_DIRECT = build("cheap", "900.00", 9.0, 1, Set.of(Amenity.BREAKFAST_INCLUDED));
-    private static final TravelPackage PRICEY_STOPOVER = build("pricey", "2500.00", 7.0, 2, Set.of(Amenity.FREE_FLEXIBLE_CANCELLATION));
+    private static final TravelPackage CHEAP_DIRECT = build("cheap", "900.00", 9.0, 1, Set.of(Amenity.BREAKFAST_INCLUDED), "Boa Viagem");
+    private static final TravelPackage PRICEY_STOPOVER = build("pricey", "2500.00", 7.0, 2, Set.of(Amenity.FREE_FLEXIBLE_CANCELLATION), "Centro");
 
     private static final List<TravelPackage> ALL = List.of(CHEAP_DIRECT, PRICEY_STOPOVER);
 
@@ -750,33 +847,57 @@ class PackageFilterDomainServiceTest {
     }
 
     @Test void maxPriceDropsPackagesAboveTheCeiling() {
-        var filter = new PackageFilter(new BigDecimal("1000.00"), null, false, false, false);
+        var filter = new PackageFilter(new BigDecimal("1000.00"), null, false, false, false, null);
         assertThat(filters.apply(ALL, filter)).containsExactly(CHEAP_DIRECT);
     }
 
     @Test void minRatingDropsPackagesBelowTheFloor() {
-        var filter = new PackageFilter(null, 8.5, false, false, false);
+        var filter = new PackageFilter(null, 8.5, false, false, false, null);
         assertThat(filters.apply(ALL, filter)).containsExactly(CHEAP_DIRECT);
     }
 
     @Test void directFlightOnlyDropsPackagesWithConnections() {
-        var filter = new PackageFilter(null, null, true, false, false);
+        var filter = new PackageFilter(null, null, true, false, false, null);
         assertThat(filters.apply(ALL, filter)).containsExactly(CHEAP_DIRECT);
     }
 
     @Test void breakfastFilterKeepsOnlyLodgingWithBreakfast() {
-        var filter = new PackageFilter(null, null, false, true, false);
+        var filter = new PackageFilter(null, null, false, true, false, null);
         assertThat(filters.apply(ALL, filter)).containsExactly(CHEAP_DIRECT);
     }
 
     @Test void freeCancellationFilterKeepsOnlyFlexibleLodging() {
-        var filter = new PackageFilter(null, null, false, false, true);
+        var filter = new PackageFilter(null, null, false, false, true, null);
         assertThat(filters.apply(ALL, filter)).containsExactly(PRICEY_STOPOVER);
     }
 
     @Test void combinedFiltersMayLeaveNothing() {
-        var filter = new PackageFilter(new BigDecimal("1000.00"), null, false, false, true);
+        var filter = new PackageFilter(new BigDecimal("1000.00"), null, false, false, true, null);
         assertThat(filters.apply(ALL, filter)).isEmpty();
+    }
+
+    @Test void neighborhoodFilterKeepsOnlyPackagesInThatNeighborhood() {
+        var filter = new PackageFilter(null, null, false, false, false, "Boa Viagem");
+        assertThat(filters.apply(ALL, filter)).containsExactly(CHEAP_DIRECT);
+    }
+
+    @Test void neighborhoodFilterIgnoresAccentsAndCase() {
+        var filter = new PackageFilter(null, null, false, false, false, "boa viagem");
+        assertThat(filters.apply(ALL, filter)).containsExactly(CHEAP_DIRECT);
+    }
+
+    @Test void summariseGroupsPackagesByNeighborhoodWithCountAndCheapestPrice() {
+        var summaries = filters.summarise(ALL);
+        assertThat(summaries).hasSize(2);
+        assertThat(summaries.getFirst().neighborhood()).isEqualTo("Boa Viagem");
+        assertThat(summaries.getFirst().packages()).isEqualTo(1);
+        assertThat(summaries.getFirst().cheapest().amount()).isEqualByComparingTo("900.00");
+    }
+
+    @Test void summariesComeSortedByCheapestPriceSoTheBestAreaIsFirst() {
+        assertThat(filters.summarise(ALL))
+            .extracting(NeighborhoodSummary::neighborhood)
+            .containsExactly("Boa Viagem", "Centro");
     }
 }
 ```
@@ -786,7 +907,17 @@ class PackageFilterDomainServiceTest {
 Run: `mvn test -Dtest=PackageFilterDomainServiceTest`
 Expected: erro de compilação — `PackageFilter` e `PackageFilterDomainService` não existem.
 
-- [ ] **Step 3: Criar PackageFilter**
+- [ ] **Step 3: Criar NeighborhoodSummary e PackageFilter**
+
+Criar `src/main/java/com/smarttravel/analyzer/domain/model/search/NeighborhoodSummary.java`:
+
+```java
+package com.smarttravel.analyzer.domain.model.search;
+
+import com.smarttravel.analyzer.domain.model.shared.Money;
+
+public record NeighborhoodSummary(String neighborhood, int packages, Money cheapest) {}
+```
 
 Criar `src/main/java/com/smarttravel/analyzer/domain/model/search/PackageFilter.java`:
 
@@ -796,8 +927,8 @@ package com.smarttravel.analyzer.domain.model.search;
 import java.math.BigDecimal;
 
 public record PackageFilter(BigDecimal maxPrice, Double minRating, boolean directFlightOnly,
-                            boolean breakfastIncluded, boolean freeCancellation) {
-    public static PackageFilter none() { return new PackageFilter(null, null, false, false, false); }
+                            boolean breakfastIncluded, boolean freeCancellation, String neighborhood) {
+    public static PackageFilter none() { return new PackageFilter(null, null, false, false, false, null); }
 }
 ```
 
@@ -810,8 +941,14 @@ package com.smarttravel.analyzer.domain.service;
 
 import com.smarttravel.analyzer.domain.model.lodging.Amenity;
 import com.smarttravel.analyzer.domain.model.packagebundle.TravelPackage;
+import com.smarttravel.analyzer.domain.model.search.NeighborhoodSummary;
 import com.smarttravel.analyzer.domain.model.search.PackageFilter;
+import com.smarttravel.analyzer.domain.model.shared.Money;
+import java.text.Normalizer;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PackageFilterDomainService {
 
@@ -819,11 +956,35 @@ public class PackageFilterDomainService {
         return packages.stream().filter(candidate -> matches(candidate, filter)).toList();
     }
 
+    /** Bairros presentes nos pacotes, do mais barato para o mais caro. Nada é cadastrado por cidade. */
+    public List<NeighborhoodSummary> summarise(List<TravelPackage> packages) {
+        Map<String, List<TravelPackage>> grouped = new LinkedHashMap<>();
+        for (var candidate : packages) {
+            grouped.computeIfAbsent(candidate.lodging().offer().neighborhood(), key -> new java.util.ArrayList<>()).add(candidate);
+        }
+        return grouped.entrySet().stream()
+            .map(entry -> new NeighborhoodSummary(entry.getKey(), entry.getValue().size(), cheapest(entry.getValue())))
+            .sorted(Comparator.comparing(NeighborhoodSummary::cheapest))
+            .toList();
+    }
+
+    private static Money cheapest(List<TravelPackage> packages) {
+        return packages.stream().map(TravelPackage::totalPrice).min(Comparator.naturalOrder()).orElseThrow();
+    }
+
+    /** Compara sem acento e sem caixa: "boa viagem" acha "Boa Viagem". */
+    static String fold(String value) {
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
+            .replaceAll("\\p{M}", "").trim().toLowerCase(java.util.Locale.ROOT);
+    }
+
     private boolean matches(TravelPackage candidate, PackageFilter filter) {
         if (filter.maxPrice() != null && candidate.totalPrice().amount().compareTo(filter.maxPrice()) > 0) return false;
         if (filter.minRating() != null && candidate.lodging().offer().rating().average() < filter.minRating()) return false;
         if (filter.directFlightOnly() && candidate.flight().offer().stops() > 0) return false;
         if (filter.breakfastIncluded() && !candidate.lodging().offer().has(Amenity.BREAKFAST_INCLUDED)) return false;
+        if (filter.neighborhood() != null && !filter.neighborhood().isBlank()
+            && !fold(candidate.lodging().offer().neighborhood()).equals(fold(filter.neighborhood()))) return false;
         return !filter.freeCancellation() || candidate.lodging().offer().has(Amenity.FREE_FLEXIBLE_CANCELLATION);
     }
 }
@@ -832,7 +993,7 @@ public class PackageFilterDomainService {
 - [ ] **Step 5: Rodar e ver passar**
 
 Run: `mvn test -Dtest=PackageFilterDomainServiceTest`
-Expected: PASS, 7 testes.
+Expected: PASS, 11 testes.
 
 - [ ] **Step 6: Registrar o bean e commitar**
 
@@ -848,7 +1009,7 @@ git commit -m "feat: filter assembled packages on the server side"
 
 ---
 
-### Task 6: "Por que este pacote?"
+### Task 7: "Por que este pacote?"
 
 O domínio já calcula tudo o que justifica a escolha e joga fora. Esta é a diferença entre o app e qualquer comparador de preço.
 
@@ -899,7 +1060,7 @@ class PackageExplanationDomainServiceTest {
         var flightOffer = new FlightOffer(id + "-f", new Airline("G3", "GOL"), Money.brl("800.00"), Money.brl("90.00"),
             Money.brl("0.00"), List.of(new FlightLeg(new Location("CWB", "Curitiba", "BR"),
             new Location("REC", "Recife", "BR"), null, false, false)), .9);
-        var lodgingOffer = new LodgingOffer(id + "-l", "Hotel " + id, Money.brl("100.00"), 1, Money.brl("30.00"),
+        var lodgingOffer = new LodgingOffer(id + "-l", "Hotel " + id, "Centro", Money.brl("100.00"), 1, Money.brl("30.00"),
             Money.brl("0.00"), Money.brl("0.00"), new HotelRating(rating, reviews), Set.of(Amenity.BREAKFAST_INCLUDED), 1.0);
         return new TravelPackage(id, Money.brl(total), new Score(85), new Score(quality), new Score(80), null,
             new PackagePart<>(flightOffer, flightOffer.normalize(false)),
@@ -1027,7 +1188,7 @@ git commit -m "feat: explain in plain Portuguese why a package won"
 
 ---
 
-### Task 7: Links de reserva
+### Task 8: Links de reserva
 
 Função pura: monta a URL de busca do parceiro já preenchida. Sem rede, sem TTL, sem persistência.
 
@@ -1186,7 +1347,7 @@ git commit -m "feat: build partner booking links as a pure function"
 
 ---
 
-### Task 8: Providers de demonstração atrás das portas existentes
+### Task 9: Providers de demonstração atrás das portas existentes
 
 As portas existem e não têm nenhuma implementação. Enquanto não há fonte real, os demos preenchem o buraco — e ficam marcados como demo para a tela poder avisar.
 
@@ -1264,6 +1425,13 @@ class DemoProvidersTest {
         var other = new SearchCriteria("CWB", "SSA", LocalDate.of(2026, 11, 10), LocalDate.of(2026, 11, 13), 2, true, true);
         assertThat(new DemoLodgingProvider().searchLodging(CRITERIA))
             .isNotEqualTo(new DemoLodgingProvider().searchLodging(other));
+    }
+
+    @Test void lodgingOffersSpreadAcrossSeveralNeighborhoodsWithMoreThanOnePerArea() {
+        var neighborhoods = new DemoLodgingProvider().searchLodging(CRITERIA).stream()
+            .map(offer -> offer.neighborhood()).toList();
+        assertThat(neighborhoods).doesNotContainNull();
+        assertThat(java.util.Set.copyOf(neighborhoods)).hasSizeGreaterThan(2).hasSizeLessThan(neighborhoods.size());
     }
 
     @Test void atLeastOneFlightIsDirectAndAtLeastOneHasAConnection() {
@@ -1364,6 +1532,9 @@ public class DemoLodgingProvider implements LodgingProviderPort {
     private static final List<String> NAMES = List.of("Pousada Maré Alta", "Hotel Centro Histórico",
         "Apartamento Beira-Mar", "Hostel do Porto", "Casa de Temporada Jardim", "Apart-Hotel Executivo");
 
+    private static final List<String> NEIGHBORHOODS = List.of("Boa Viagem", "Centro",
+        "Boa Viagem", "Recife Antigo", "Espinheiro", "Centro");
+
     @Override public boolean isDemo() { return true; }
 
     @Override public List<LodgingOffer> searchLodging(SearchCriteria criteria) {
@@ -1375,7 +1546,7 @@ public class DemoLodgingProvider implements LodgingProviderPort {
             if (index % 2 == 0) amenities.add(Amenity.BREAKFAST_INCLUDED);
             if (index % 3 != 0) amenities.add(Amenity.FREE_FLEXIBLE_CANCELLATION);
             if (index % 3 == 0) amenities.add(Amenity.WALKABLE_ATTRACTIONS);
-            offers.add(new LodgingOffer("demo-lo-" + index, NAMES.get(index), money(110 + random.nextInt(320)), nights,
+            offers.add(new LodgingOffer("demo-lo-" + index, NAMES.get(index), NEIGHBORHOODS.get(index), money(110 + random.nextInt(320)), nights,
                 money(random.nextInt(60)), money(random.nextInt(35)), money(index % 4 == 0 ? 45 : 0),
                 new HotelRating(round(7.2 + random.nextDouble() * 2.6), 40 + random.nextInt(2400)),
                 Set.copyOf(amenities), round(random.nextDouble() * 4)));
@@ -1439,7 +1610,7 @@ public class DemoCarRentalProvider implements CarRentalProviderPort {
 - [ ] **Step 7: Rodar e ver passar**
 
 Run: `mvn test -Dtest=DemoProvidersTest`
-Expected: PASS, 8 testes.
+Expected: PASS, 9 testes.
 
 - [ ] **Step 8: Rodar a suíte e commitar**
 
@@ -1453,7 +1624,7 @@ git commit -m "feat: add demo providers behind the existing offer ports"
 
 ---
 
-### Task 9: Busca assíncrona com estado por fonte
+### Task 10: Busca assíncrona com estado por fonte
 
 Busca demorada não pode ser um POST pendurado até o navegador desistir. E fonte que falha não pode derrubar a busca inteira.
 
@@ -1789,7 +1960,7 @@ git commit -m "feat: run searches asynchronously with per-source health"
 
 ---
 
-### Task 10: API REST da busca
+### Task 11: API REST da busca
 
 **Files:**
 - Create: `src/main/java/com/smarttravel/analyzer/application/dto/SearchStartedResponse.java`
@@ -1798,6 +1969,7 @@ git commit -m "feat: run searches asynchronously with per-source health"
 - Create: `src/main/java/com/smarttravel/analyzer/application/dto/PackageDTO.java`
 - Create: `src/main/java/com/smarttravel/analyzer/application/dto/BookingLinkDTO.java`
 - Create: `src/main/java/com/smarttravel/analyzer/application/dto/DateOptionDTO.java`
+- Create: `src/main/java/com/smarttravel/analyzer/application/dto/NeighborhoodDTO.java`
 - Create: `src/main/java/com/smarttravel/analyzer/application/usecase/StartSearchUseCase.java`
 - Create: `src/main/java/com/smarttravel/analyzer/application/usecase/GetSearchResultUseCase.java`
 - Create: `src/main/java/com/smarttravel/analyzer/presentation/rest/SearchController.java`
@@ -1812,7 +1984,8 @@ git commit -m "feat: run searches asynchronously with per-source health"
 - Consumes: tudo das tarefas 4 a 9
 - Produces:
   - `POST /api/search` body `SearchCriteriaRequest` → `202` `SearchStartedResponse(String searchId)`
-  - `GET /api/search/{id}` query opcional `maxPrice`, `minRating`, `directFlightOnly`, `breakfastIncluded`, `freeCancellation` → `200` `SearchResultResponse`; `404` se o id não existe
+  - `GET /api/search/{id}` query opcional `maxPrice`, `minRating`, `directFlightOnly`, `breakfastIncluded`, `freeCancellation`, `neighborhood` → `200` `SearchResultResponse`; `404` se o id não existe
+  - `neighborhoods` na resposta é calculado sobre os pacotes **antes** de aplicar os filtros, para as opções de bairro não sumirem conforme o usuário filtra
   - `SearchCriteriaRequest(String origin, String destination, LocalDate departureDate, LocalDate returnDate, int travelers, boolean checkedBagRequested, boolean carRequired, boolean flexibleDates)`
 
 O `SearchBestValuePackagesUseCase` sai: ele existia só para devolver os três pacotes escritos à mão. O endpoint `GET /api/travel-analysis/trends/{marketKey}` continua como está.
@@ -1869,7 +2042,26 @@ class SearchControllerTest {
             .andExpect(jsonPath("$.packages[0].advertisedPrice").isNotEmpty())
             .andExpect(jsonPath("$.packages[0].why").isNotEmpty())
             .andExpect(jsonPath("$.packages[0].lodgingName").isNotEmpty())
+            .andExpect(jsonPath("$.packages[0].neighborhood").isNotEmpty())
             .andExpect(jsonPath("$.packages[0].links.length()").value(2));
+    }
+
+    @Test void theResultListsTheNeighborhoodsFoundWithCountAndCheapestPrice() throws Exception {
+        var id = startSearch();
+        mockMvc().perform(get("/api/search/{id}", id))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.neighborhoods.length()").value(org.hamcrest.Matchers.greaterThan(1)))
+            .andExpect(jsonPath("$.neighborhoods[0].neighborhood").isNotEmpty())
+            .andExpect(jsonPath("$.neighborhoods[0].packages").isNumber())
+            .andExpect(jsonPath("$.neighborhoods[0].cheapest").isNotEmpty());
+    }
+
+    @Test void filteringByNeighborhoodKeepsTheNeighborhoodOptionsIntact() throws Exception {
+        var id = startSearch();
+        mockMvc().perform(get("/api/search/{id}", id).param("neighborhood", "bairro-que-nao-existe"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.packages.length()").value(0))
+            .andExpect(jsonPath("$.neighborhoods.length()").value(org.hamcrest.Matchers.greaterThan(1)));
     }
 
     @Test void everySourceIsReportedWithItsHealth() throws Exception {
@@ -1929,6 +2121,16 @@ package com.smarttravel.analyzer.application.dto;
 public record BookingLinkDTO(String partner, String url) {}
 ```
 
+`NeighborhoodDTO.java`:
+
+```java
+package com.smarttravel.analyzer.application.dto;
+
+import java.math.BigDecimal;
+
+public record NeighborhoodDTO(String neighborhood, int packages, BigDecimal cheapest) {}
+```
+
 `DateOptionDTO.java`:
 
 ```java
@@ -1954,7 +2156,7 @@ public record PackageDTO(String id, PackageBundleType recommendationType, BigDec
                          double valueScore, double qualityScore, double convenienceScore,
                          List<String> included, String why,
                          String airline, int stops,
-                         String lodgingName, double lodgingRating, int lodgingReviews,
+                         String lodgingName, String neighborhood, double lodgingRating, int lodgingReviews,
                          String carSupplier, String carCategory,
                          List<BookingLinkDTO> links) {}
 ```
@@ -1969,7 +2171,7 @@ import java.util.List;
 
 public record SearchResultResponse(String searchId, SearchStatus status, boolean demo,
                                    List<SourceStatusDTO> sources, List<PackageDTO> packages,
-                                   List<DateOptionDTO> dateOptions) {}
+                                   List<NeighborhoodDTO> neighborhoods, List<DateOptionDTO> dateOptions) {}
 ```
 
 - [ ] **Step 4: Acrescentar flexibleDates ao request**
@@ -2038,6 +2240,7 @@ public class DomainToDtoMapper {
             travelPackage.flight().offer().airline().name(),
             travelPackage.flight().offer().stops(),
             lodging.name(),
+            lodging.neighborhood(),
             lodging.rating().average(),
             lodging.rating().reviewCount(),
             travelPackage.hasCar() ? travelPackage.car().offer().supplier() : null,
@@ -2116,12 +2319,15 @@ public class GetSearchResultUseCase {
         return store.find(searchId).map(session -> {
             var visible = filters.apply(session.packages(), filter);
             var packages = visible.stream().map(item -> mapper.toDto(item, session.packages(), session.criteria())).toList();
+            var neighborhoods = filters.summarise(session.packages()).stream()
+                .map(summary -> new NeighborhoodDTO(summary.neighborhood(), summary.packages(), summary.cheapest().amount()))
+                .toList();
             var dateOptions = session.dateOptions().stream()
                 .map(option -> new DateOptionDTO(option.departureDate(), option.returnDate(),
                     option.total().amount(), option.difference().amount()))
                 .toList();
             return new SearchResultResponse(session.id(), session.status(), session.demo(),
-                session.sources().stream().map(mapper::toDto).toList(), packages, List.copyOf(dateOptions));
+                session.sources().stream().map(mapper::toDto).toList(), packages, neighborhoods, List.copyOf(dateOptions));
         });
     }
 }
@@ -2166,8 +2372,9 @@ public class SearchController {
             @RequestParam(required = false) Double minRating,
             @RequestParam(defaultValue = "false") boolean directFlightOnly,
             @RequestParam(defaultValue = "false") boolean breakfastIncluded,
-            @RequestParam(defaultValue = "false") boolean freeCancellation) {
-        var filter = new PackageFilter(maxPrice, minRating, directFlightOnly, breakfastIncluded, freeCancellation);
+            @RequestParam(defaultValue = "false") boolean freeCancellation,
+            @RequestParam(required = false) String neighborhood) {
+        var filter = new PackageFilter(maxPrice, minRating, directFlightOnly, breakfastIncluded, freeCancellation, neighborhood);
         return getResult.result(searchId, filter).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
@@ -2195,7 +2402,7 @@ Em `TravelAnalysisController.java`, remover o campo `searchPackages`, o parâmet
 - [ ] **Step 9: Rodar e ver passar**
 
 Run: `mvn test -Dtest=SearchControllerTest`
-Expected: PASS, 6 testes.
+Expected: PASS, 8 testes.
 
 Se `theResultCarriesThreeRecommendations` falhar com `packages.length()` igual a 0, a busca ainda estava rodando quando o GET chegou. Nesse caso o teste deve esperar: adicione um laço de espera antes do GET, com no máximo 50 tentativas de 100ms, parando quando `status` deixar de ser `BUSCANDO`. Não troque o executor por síncrono — o comportamento assíncrono é o que está sendo testado.
 
@@ -2211,7 +2418,7 @@ git commit -m "feat: expose the asynchronous search over REST"
 
 ---
 
-### Task 11: Datas flexíveis ±3 dias
+### Task 12: Datas flexíveis ±3 dias
 
 **Files:**
 - Create: `src/main/java/com/smarttravel/analyzer/application/service/DateFlexibilityService.java`
@@ -2410,7 +2617,7 @@ git commit -m "feat: compare neighbouring departure dates within a 3-day window"
 
 ---
 
-### Task 12: Tela em português, com busca, progresso, filtros e reserva
+### Task 13: Tela em português, com busca, progresso, filtros e reserva
 
 A tela atual está em inglês, tem três pacotes de exemplo no JavaScript e chama um endpoint que deixou de existir. É reescrita inteira.
 
@@ -2432,6 +2639,7 @@ A tela atual está em inglês, tem três pacotes de exemplo no JavaScript e cham
 5. Resultado: o pacote `BEST_VALUE_OVERALL` em destaque com o rótulo **Pacote Ideal**; abaixo, `SMART_BUDGET` ("Econômico Inteligente") e `MAX_COMFORT` ("Máximo Conforto").
 6. Cada card mostra: custo real em destaque, preço anunciado riscado, custo oculto, o que está incluído, o texto de `why`, hotel com nota e número de avaliações, companhia aérea, paradas, e os botões de reserva a partir de `links`.
 7. Filtros: preço máximo, nota mínima, só voo direto, café da manhã, cancelamento grátis. Ao mudar qualquer um, refazer o `GET` com os query params — sem refazer a busca.
+7b. Bairros: uma fileira de chips com o nome do bairro, quantas opções tem e o preço a partir de. Clicar filtra por aquele bairro; "Todos os bairros" limpa. As opções vêm de `neighborhoods`, que o servidor calcula antes dos filtros — então elas não somem conforme o usuário filtra.
 8. `status: "ERRO"` ⇒ mensagem explicando que nenhuma combinação foi encontrada, listando as fontes degradadas.
 9. `status: "PARCIAL"` ⇒ aviso de que faltou fonte, com o resultado exibido mesmo assim.
 10. `dateOptions` não vazio ⇒ tabela de datas vizinhas com a economia de cada uma.
@@ -2476,6 +2684,11 @@ Substituir `index.html` inteiro. Estrutura mínima obrigatória (os ids são usa
       <ul id="sources"></ul>
     </section>
 
+    <section id="neighborhoods" class="neighborhoods" hidden>
+      <h2>Em que parte de <span id="destination-label"></span>?</h2>
+      <div id="neighborhood-chips" class="chips"></div>
+    </section>
+
     <section id="filters" class="filters" hidden>
       <label>Preço máximo <input id="f-maxPrice" type="number" min="0" step="50" /></label>
       <label>Nota mínima <input id="f-minRating" type="number" min="0" max="10" step="0.5" /></label>
@@ -2508,6 +2721,9 @@ const filters = document.querySelector('#filters');
 const message = document.querySelector('#message');
 const packagesEl = document.querySelector('#packages');
 const dateOptionsEl = document.querySelector('#date-options');
+const neighborhoodsEl = document.querySelector('#neighborhoods');
+const chipsEl = document.querySelector('#neighborhood-chips');
+const destinationLabel = document.querySelector('#destination-label');
 const dateTable = document.querySelector('#date-table');
 const demoBanner = document.querySelector('#demo-banner');
 
@@ -2524,6 +2740,7 @@ document.querySelector('input[name="departureDate"]').value = inDays(45);
 document.querySelector('input[name="returnDate"]').value = inDays(48);
 
 let searchId = null;
+let neighborhood = null;
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -2540,6 +2757,7 @@ form.addEventListener('submit', async (event) => {
   };
 
   reset();
+  destinationLabel.textContent = body.destination;
   progress.hidden = false;
 
   const started = await fetch('/api/search', {
@@ -2563,7 +2781,10 @@ filters.addEventListener('change', () => { if (searchId) load(); });
 function reset() {
   packagesEl.innerHTML = '';
   sourcesList.innerHTML = '';
+  chipsEl.innerHTML = '';
+  neighborhood = null;
   dateOptionsEl.hidden = true;
+  neighborhoodsEl.hidden = true;
   filters.hidden = true;
   message.hidden = true;
 }
@@ -2589,6 +2810,7 @@ function filterQuery() {
   if (document.querySelector('#f-directFlightOnly').checked) params.set('directFlightOnly', 'true');
   if (document.querySelector('#f-breakfastIncluded').checked) params.set('breakfastIncluded', 'true');
   if (document.querySelector('#f-freeCancellation').checked) params.set('freeCancellation', 'true');
+  if (neighborhood) params.set('neighborhood', neighborhood);
   return params.toString() ? `?${params}` : '';
 }
 
@@ -2619,12 +2841,15 @@ function render(result) {
   }
 
   filters.hidden = false;
+  renderNeighborhoods(result.neighborhoods);
 
   if (result.status === 'PARCIAL') {
     const broken = result.sources.filter((s) => s.health === 'DEGRADADO').map((s) => s.source);
     show(`Resultado parcial — sem dados de: ${broken.join(', ')}.`);
   } else if (result.packages.length === 0) {
-    show('Nenhum pacote passa nos filtros. Afrouxe algum deles.');
+    show(neighborhood
+      ? `Nenhum pacote em ${neighborhood} com esses filtros. Toque em "Todos os bairros" ou afrouxe algum filtro.`
+      : 'Nenhum pacote passa nos filtros. Afrouxe algum deles.');
   }
 
   renderPackages(result.packages);
@@ -2651,7 +2876,7 @@ function renderPackages(packages) {
       </header>
       ${Number(item.hiddenCosts) > 0 ? `<p class="hidden-costs">${brl(item.hiddenCosts)} em custos que o anúncio não mostra</p>` : ''}
       <dl class="details">
-        <div><dt>Hospedagem</dt><dd>${item.lodgingName} — nota ${item.lodgingRating} (${item.lodgingReviews} avaliações)</dd></div>
+        <div><dt>Hospedagem</dt><dd>${item.lodgingName} — ${item.neighborhood} — nota ${item.lodgingRating} (${item.lodgingReviews} avaliações)</dd></div>
         <div><dt>Voo</dt><dd>${item.airline} — ${item.stops === 0 ? 'direto' : `${item.stops} parada(s)`}</dd></div>
         ${item.carSupplier ? `<div><dt>Carro</dt><dd>${item.carSupplier} — ${item.carCategory}</dd></div>` : ''}
         <div><dt>Incluído</dt><dd>${item.included.join(', ') || '—'}</dd></div>
@@ -2662,6 +2887,24 @@ function renderPackages(packages) {
       </footer>
     </article>`).join('');
 }
+
+function renderNeighborhoods(areas) {
+  if (!areas || areas.length === 0) { neighborhoodsEl.hidden = true; return; }
+  neighborhoodsEl.hidden = false;
+  const all = `<button class="chip ${neighborhood ? '' : 'active'}" data-area="">Todos os bairros</button>`;
+  chipsEl.innerHTML = all + areas.map((area) => `
+    <button class="chip ${neighborhood === area.neighborhood ? 'active' : ''}" data-area="${area.neighborhood}">
+      ${area.neighborhood}
+      <small>${area.packages} ${area.packages === 1 ? 'opção' : 'opções'} · a partir de ${brl(area.cheapest)}</small>
+    </button>`).join('');
+}
+
+chipsEl.addEventListener('click', (event) => {
+  const chip = event.target.closest('.chip');
+  if (!chip || !searchId) return;
+  neighborhood = chip.dataset.area || null;
+  load();
+});
 
 function renderDateOptions(options) {
   if (!options || options.length === 0) { dateOptionsEl.hidden = true; return; }
@@ -2680,7 +2923,7 @@ function renderDateOptions(options) {
 
 - [ ] **Step 3: Ajustar o CSS**
 
-Em `styles.css`, manter a paleta existente e acrescentar as classes novas: `.demo-banner` (faixa de aviso, fundo âmbar, texto escuro, sempre visível no topo), `.progress`, `.source.ok` / `.source.degradado` (verde e âmbar), `.filters` (linha de campos), `.package` (card), `.package.featured` (borda e sombra mais fortes que os demais), `.price s` (preço anunciado riscado, cor apagada), `.hidden-costs`, `.why`, `.book` (botão), `.date-options table` (larguras e alinhamento à direita nos valores).
+Em `styles.css`, manter a paleta existente e acrescentar as classes novas: `.demo-banner` (faixa de aviso, fundo âmbar, texto escuro, sempre visível no topo), `.progress`, `.source.ok` / `.source.degradado` (verde e âmbar), `.filters` (linha de campos), `.package` (card), `.package.featured` (borda e sombra mais fortes que os demais), `.price s` (preço anunciado riscado, cor apagada), `.hidden-costs`, `.why`, `.book` (botão), `.chips` (fileira que quebra linha), `.chip` e `.chip.active` (o ativo com fundo cheio e contraste invertido; `<small>` em bloco, menor e apagado), `.date-options table` (larguras e alinhamento à direita nos valores).
 
 Remover as regras que sobraram sem uso do layout antigo (`.hero`, `.value-card`, `.score-ring`, `.mini-map`, `.topbar`, `.nav-links`).
 
@@ -2698,6 +2941,7 @@ Abrir `http://localhost:8080` e conferir, um a um:
 4. O custo real é maior que o preço anunciado riscado, e o texto de custo oculto bate com a diferença.
 5. "Por que este pacote" traz frase em português.
 6. Marcar "Só voo direto" reduz ou mantém a lista, sem recarregar a página.
+6b. Os chips de bairro aparecem com contagem e preço; clicar em um filtra, e "Todos os bairros" volta ao conjunto completo.
 7. Preço máximo igual a 1 esvazia a lista e mostra a mensagem de filtro.
 8. Os botões de reserva abrem o Booking e o Google Flights com destino e datas preenchidos.
 9. Marcar "Datas flexíveis" e buscar de novo traz a tabela de datas vizinhas.
@@ -2713,7 +2957,7 @@ git commit -m "feat: rebuild the front end around the asynchronous search"
 
 ---
 
-### Task 13: Atualizar o CLAUDE.md e fechar
+### Task 14: Atualizar o CLAUDE.md e fechar
 
 **Files:**
 - Modify: `CLAUDE.md`

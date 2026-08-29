@@ -78,7 +78,7 @@ real, o que está incluído), e abaixo Econômico Inteligente e Máximo Conforto
 Durante a busca: progresso por fonte, não um spinner mudo.
 
 Filtros aplicados sobre o resultado já obtido, sem refazer a busca: preço máximo, nota
-mínima, só voo direto, café da manhã incluso, cancelamento grátis. A filtragem roda **no
+mínima, só voo direto, café da manhã incluso, cancelamento grátis e bairro. A filtragem roda **no
 servidor**, num `PackageFilterDomainService` testável, exposto como
 `GET /api/search/{id}?notaMinima=8&precoMax=2000` sobre o resultado em memória — o front
 não reimplementa regra de negócio.
@@ -108,6 +108,19 @@ Dado que o domínio já produz e hoje descarta.
 preenchida com destino, datas e viajantes. Testado por asserção de string, com casos de
 `&`, espaço e acento. Vale mesmo com dado de demonstração — o link é real.
 
+### Bairros do destino
+
+`LodgingOffer` ganha um campo `neighborhood`. Depois da busca, a tela mostra os bairros que
+realmente apareceram nas ofertas — nome, quantas opções e o preço a partir de — e clicar
+num deles filtra o resultado.
+
+A lista de bairros é derivada das próprias ofertas, não de um catálogo por cidade: nada
+precisa ser cadastrado, funciona para qualquer destino, e com fonte real o bairro vem junto
+do anúncio. Bairro ausente vira `"Não informado"`, nunca `null`.
+
+O resumo por bairro é calculado **antes** dos filtros, para as opções não sumirem conforme
+o usuário filtra. A comparação ignora acento e caixa.
+
 ### Flexibilidade de datas ±3 dias
 
 Busca os dias vizinhos e mostra quanto se economiza mudando a data
@@ -136,7 +149,8 @@ vizinha dispara uma busca nova com aquelas datas.
 - Contract test por porta de provider; os três demos estendem a mesma bateria.
 - Busca assíncrona: fonte que falha produz `PARCIAL`, nunca exceção.
 - `DeepLinkBuilder`: encoding.
-- Filtros: cada filtro isolado e combinados.
+- Filtros: cada filtro isolado e combinados, incluindo bairro sem acento e em caixa baixa.
+- Resumo por bairro: agrupamento, contagem e preço a partir de.
 - Nenhum teste toca a rede.
 
 ## Correção de infraestrutura (pré-requisito)
