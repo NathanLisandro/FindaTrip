@@ -11,5 +11,5 @@ public class PackageBundlerDomainService {
         var comfort = candidates.stream().max(Comparator.comparingDouble(p -> p.qualityScore().value() + p.convenienceScore().value())).orElse(best);
         return List.of(tag(best, PackageBundleType.BEST_VALUE_OVERALL), tag(budget, PackageBundleType.SMART_BUDGET), tag(comfort, PackageBundleType.MAX_COMFORT));
     }
-    private TravelPackage tag(TravelPackage p, PackageBundleType type) { return new TravelPackage(p.id(), p.totalPrice(), p.valueScore(), p.qualityScore(), p.convenienceScore(), type); }
+    private TravelPackage tag(TravelPackage p, PackageBundleType type) { return p.withRecommendationType(type); }
 }
