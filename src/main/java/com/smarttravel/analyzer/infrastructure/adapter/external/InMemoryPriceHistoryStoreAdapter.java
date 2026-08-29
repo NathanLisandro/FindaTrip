@@ -10,11 +10,11 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class InMemoryPriceHistoryStoreAdapter implements PriceHistoryStorePort {
     @Override public List<PriceHistoryPoint> findByMarketKey(String marketKey) {
-        var usd = Currency.getInstance("USD");
+        var brl = Money.BRL;
         return List.of(
-            new PriceHistoryPoint(marketKey, LocalDate.now().minusDays(30), new Money(java.math.BigDecimal.valueOf(1500), usd)),
-            new PriceHistoryPoint(marketKey, LocalDate.now().minusDays(20), new Money(java.math.BigDecimal.valueOf(1620), usd)),
-            new PriceHistoryPoint(marketKey, LocalDate.now().minusDays(10), new Money(java.math.BigDecimal.valueOf(1710), usd)),
-            new PriceHistoryPoint(marketKey, LocalDate.now().minusDays(5), new Money(java.math.BigDecimal.valueOf(1580), usd)));
+            new PriceHistoryPoint(marketKey, LocalDate.now().minusDays(30), new Money(java.math.BigDecimal.valueOf(1500), brl)),
+            new PriceHistoryPoint(marketKey, LocalDate.now().minusDays(20), new Money(java.math.BigDecimal.valueOf(1620), brl)),
+            new PriceHistoryPoint(marketKey, LocalDate.now().minusDays(10), new Money(java.math.BigDecimal.valueOf(1710), brl)),
+            new PriceHistoryPoint(marketKey, LocalDate.now().minusDays(5), new Money(java.math.BigDecimal.valueOf(1580), brl)));
     }
 }

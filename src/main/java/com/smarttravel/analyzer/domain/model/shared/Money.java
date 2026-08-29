@@ -11,6 +11,12 @@ public record Money(BigDecimal amount, Currency currency) implements Comparable<
         if (amount.signum() < 0) throw new DomainException("Money cannot be negative");
         amount = amount.setScale(2, RoundingMode.HALF_UP);
     }
+    public static final java.util.Currency BRL = java.util.Currency.getInstance("BRL");
+
+    public static Money brl(String amount) { return new Money(new BigDecimal(amount), BRL); }
+
+    public Money subtract(Money other) { requireSameCurrency(other); return new Money(amount.subtract(other.amount), currency); }
+
     public static Money of(String amount, String currency) { return new Money(new BigDecimal(amount), Currency.getInstance(currency)); }
     public Money add(Money other) { requireSameCurrency(other); return new Money(amount.add(other.amount), currency); }
     public Money multiply(long factor) { return new Money(amount.multiply(BigDecimal.valueOf(factor)), currency); }
