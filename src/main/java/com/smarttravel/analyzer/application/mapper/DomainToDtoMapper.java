@@ -46,6 +46,6 @@ public class DomainToDtoMapper {
     }
 
     public SourceStatusDTO toDto(SourceStatus source) {
-        return new SourceStatusDTO(source.source(), source.health(), source.offers(), source.message());
+        return new SourceStatusDTO(source.source(), source.health(), source.offers(), source.message(), source.demo());
     }
 }

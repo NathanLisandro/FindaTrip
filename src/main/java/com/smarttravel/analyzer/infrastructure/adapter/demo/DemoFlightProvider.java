@@ -8,9 +8,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import org.springframework.stereotype.Component;
 
-@Component
 public class DemoFlightProvider implements FlightProviderPort {
 
     private static final List<Airline> AIRLINES = List.of(

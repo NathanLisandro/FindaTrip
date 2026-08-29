@@ -1,6 +1,17 @@
 package com.smarttravel.analyzer.domain.model.search;
 
-public record SourceStatus(String source, SourceHealth health, int offers, String message) {
-    public static SourceStatus ok(String source, int offers) { return new SourceStatus(source, SourceHealth.OK, offers, null); }
-    public static SourceStatus degraded(String source, String message) { return new SourceStatus(source, SourceHealth.DEGRADADO, 0, message); }
+/**
+ * Estado de uma fonte numa busca.
+ * `demo` diz se o dado daquela fonte e real ou simulado: com voo raspado de verdade e
+ * carro ainda de demonstracao, um aviso global mentiria nos dois sentidos.
+ */
+public record SourceStatus(String source, SourceHealth health, int offers, String message, boolean demo) {
+
+    public static SourceStatus ok(String source, int offers, boolean demo) {
+        return new SourceStatus(source, SourceHealth.OK, offers, null, demo);
+    }
+
+    public static SourceStatus degraded(String source, String message, boolean demo) {
+        return new SourceStatus(source, SourceHealth.DEGRADADO, 0, message, demo);
+    }
 }

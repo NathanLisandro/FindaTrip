@@ -30,6 +30,8 @@ public class PackageExplanationDomainService {
         if (hidden.compareTo(BigDecimal.ZERO) > 0) {
             var fees = chosen.costAdjustments().stream().map(this::translateAdjustment).toList();
             reasons.add("O preço anunciado esconde " + money(hidden) + " em " + String.join(", ", fees) + ".");
+        } else {
+            reasons.add("Preço fechado: sem cobrança extra na hora de pagar.");
         }
 
         boolean cheapest = candidates.stream().noneMatch(other -> other.totalPrice().compareTo(chosen.totalPrice()) < 0);
@@ -46,6 +48,8 @@ public class PackageExplanationDomainService {
                 + " com " + count(topRating.reviewCount()) + " avaliações.");
         }
 
+        // Card mudo e pior que card simples: o usuario ficaria sem saber por que aquilo venceu.
+        if (reasons.isEmpty()) reasons.add("Melhor equilíbrio entre custo real, avaliação e conveniência.");
         return String.join(" ", reasons);
     }
 

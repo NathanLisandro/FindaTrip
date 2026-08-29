@@ -6,9 +6,7 @@ import com.smarttravel.analyzer.domain.repository.LodgingProviderPort;
 import java.math.BigDecimal;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import org.springframework.stereotype.Component;
 
-@Component
 public class DemoLodgingProvider implements LodgingProviderPort {
 
     private static final List<String> NAMES = List.of("Pousada Maré Alta", "Hotel Centro Histórico",

@@ -44,10 +44,10 @@ public class SearchRunner {
         var criteria = session.criteria();
         session.demo(flights.isDemo() && lodgings.isDemo() && cars.isDemo());
 
-        var flightOffers = collect(session, "Voos", criteria, flights::searchFlights);
-        var lodgingOffers = collect(session, "Hospedagem", criteria, lodgings::searchLodging);
+        var flightOffers = collect(session, "Voos", criteria, flights::searchFlights, flights.isDemo());
+        var lodgingOffers = collect(session, "Hospedagem", criteria, lodgings::searchLodging, lodgings.isDemo());
         var carOffers = criteria.carRequired()
-            ? collect(session, "Carros", criteria, cars::searchCars)
+            ? collect(session, "Carros", criteria, cars::searchCars, cars.isDemo())
             : List.<com.smarttravel.analyzer.domain.model.carrental.CarRentalOffer>of();
 
         // Uma fonte degradada nunca derruba a busca: se a locadora falhou, o pacote sai sem carro.
@@ -70,17 +70,18 @@ public class SearchRunner {
         session.status(degraded ? SearchStatus.PARCIAL : SearchStatus.PRONTO);
     }
 
-    private <T> List<T> collect(SearchSession session, String name, SearchCriteria criteria, Function<SearchCriteria, List<T>> call) {
+    private <T> List<T> collect(SearchSession session, String name, SearchCriteria criteria,
+                                Function<SearchCriteria, List<T>> call, boolean demo) {
         try {
             var offers = call.apply(criteria);
             if (offers.isEmpty()) {
-                session.addSource(SourceStatus.degraded(name, "nenhuma oferta encontrada"));
+                session.addSource(SourceStatus.degraded(name, "nenhuma oferta encontrada", demo));
             } else {
-                session.addSource(SourceStatus.ok(name, offers.size()));
+                session.addSource(SourceStatus.ok(name, offers.size(), demo));
             }
             return offers;
         } catch (RuntimeException failure) {
-            session.addSource(SourceStatus.degraded(name, failure.getMessage()));
+            session.addSource(SourceStatus.degraded(name, failure.getMessage(), demo));
             return List.of();
         }
     }
