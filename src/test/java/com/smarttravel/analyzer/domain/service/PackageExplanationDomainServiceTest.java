@@ -50,6 +50,20 @@ class PackageExplanationDomainServiceTest {
             .contains("3 avaliações");
     }
 
+    @Test void neverLeavesACardWithoutAReason() {
+        // Um card mudo e pior que um card simples: o usuario fica sem saber por que aquilo venceu.
+        var chosen = build("chosen", "1020.00", 8.9, 2000, 90);
+        var cheaper = build("cheaper", "900.00", 8.9, 2000, 90);
+        assertThat(explanations.explain(chosen, List.of(chosen, cheaper))).isNotBlank();
+    }
+
+    @Test void saysThePriceIsClosedWhenThereIsNothingHiddenToWarnAbout() {
+        var chosen = build("chosen", "900.00", 8.9, 2000, 90);   // igual ao anunciado: nada escondido
+        var cheaper = build("cheaper", "880.00", 8.9, 2000, 90);
+        assertThat(explanations.explain(chosen, List.of(chosen, cheaper)))
+            .containsIgnoringCase("sem cobran");
+    }
+
     @Test void explanationSaysItIsTheCheapestWhenItActuallyIs() {
         var chosen = build("chosen", "1020.00", 8.9, 2000, 90);
         var pricier = build("pricier", "2500.00", 8.9, 2000, 90);

@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
+@org.springframework.test.context.ActiveProfiles("test")
 class SearchControllerTest {
 
     @Autowired WebApplicationContext context;

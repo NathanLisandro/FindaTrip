@@ -23,7 +23,16 @@ public record TravelPackage(String id, Money totalPrice, Score valueScore, Score
         return hasCar() ? sum.add(car.price().rawPrice()) : sum;
     }
 
-    public Money hiddenCosts() { return totalPrice.subtract(advertisedPrice()); }
+    /**
+     * Quanto o anuncio escondeu. Uma fonte pode anunciar mais caro do que cobra (desconto),
+     * e ai nao ha custo oculto nenhum: zero, nunca negativo, que o Money proibe.
+     */
+    public Money hiddenCosts() {
+        var advertised = advertisedPrice();
+        return totalPrice.compareTo(advertised) <= 0
+            ? new Money(java.math.BigDecimal.ZERO, totalPrice.currency())
+            : totalPrice.subtract(advertised);
+    }
 
     public List<String> costAdjustments() {
         var all = new ArrayList<String>();

@@ -49,6 +49,23 @@ class SearchRunnerTest {
             .allSatisfy(source -> assertThat(source.health()).isEqualTo(SourceHealth.OK));
     }
 
+    @Test void eachSourceSaysWhetherItsOwnDataIsRealOrSimulated() {
+        // Com voo real e carro de demonstracao, um aviso global mentiria dos dois jeitos:
+        // dizer "tudo simulado" e falso, e esconder e pior. Entao a marca e por fonte.
+        FlightProviderPort realFlights = new FlightProviderPort() {
+            @Override public List<FlightOffer> searchFlights(SearchCriteria criteria) {
+                return new DemoFlightProvider().searchFlights(criteria);
+            }
+            @Override public boolean isDemo() { return false; }
+        };
+        var session = new SearchSession("s1", CRITERIA_WITH_CAR);
+        runner(realFlights, new DemoLodgingProvider(), new DemoCarRentalProvider()).run(session);
+        assertThat(session.sources()).filteredOn(source -> source.source().equals("Voos"))
+            .allSatisfy(source -> assertThat(source.demo()).isFalse());
+        assertThat(session.sources()).filteredOn(source -> source.source().equals("Carros"))
+            .allSatisfy(source -> assertThat(source.demo()).isTrue());
+    }
+
     @Test void aSearchBuiltOnlyFromDemoProvidersIsFlaggedAsDemo() {
         var session = new SearchSession("s1", CRITERIA);
         healthyRunner().run(session);

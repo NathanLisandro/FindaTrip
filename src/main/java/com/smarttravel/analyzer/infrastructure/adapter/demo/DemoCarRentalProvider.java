@@ -7,9 +7,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import org.springframework.stereotype.Component;
 
-@Component
 public class DemoCarRentalProvider implements CarRentalProviderPort {
 
     private static final List<String> SUPPLIERS = List.of("Movida", "Localiza", "Unidas", "Rentcars");
