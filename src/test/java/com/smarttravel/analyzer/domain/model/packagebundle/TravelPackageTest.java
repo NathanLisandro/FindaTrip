@@ -15,7 +15,8 @@ class TravelPackageTest {
     private static PackagePart<FlightOffer> flightPart() {
         var offer = new FlightOffer("fl-1", new Airline("G3", "GOL"), Money.brl("800.00"), Money.brl("90.00"),
             Money.brl("60.00"), List.of(new FlightLeg(new Location("CWB", "Curitiba", "BR"),
-            new Location("REC", "Recife", "BR"), null, false, false)), .9);
+            new Location("REC", "Recife", "BR"), null, false, false)), .9,
+            java.time.LocalTime.of(8, 0), java.time.LocalTime.of(11, 30), java.time.Duration.ofMinutes(210));
         return new PackagePart<>(offer, offer.normalize(true));
     }
 

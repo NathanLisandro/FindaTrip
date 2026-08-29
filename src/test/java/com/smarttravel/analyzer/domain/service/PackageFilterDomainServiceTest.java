@@ -22,7 +22,8 @@ class PackageFilterDomainServiceTest {
         var leg = new FlightLeg(new Location("CWB", "Curitiba", "BR"), new Location("REC", "Recife", "BR"),
             Duration.ofHours(2), false, false);
         var flightOffer = new FlightOffer(id + "-f", new Airline("G3", "GOL"), Money.brl("800.00"), Money.brl("0.00"),
-            Money.brl("0.00"), legs == 1 ? List.of(leg) : List.of(leg, leg), .9);
+            Money.brl("0.00"), legs == 1 ? List.of(leg) : List.of(leg, leg), .9,
+            java.time.LocalTime.of(8, 0), java.time.LocalTime.of(11, 30), java.time.Duration.ofMinutes(210));
         var lodgingOffer = new LodgingOffer(id + "-l", "Hotel " + id, neighborhood, Money.brl("100.00"), 1, Money.brl("0.00"),
             Money.brl("0.00"), Money.brl("0.00"), new HotelRating(rating, 500), amenities, 1.0, "Booking.com", "https://www.booking.com/hotel/br/teste.html", null);
         return new TravelPackage(id, Money.brl(total), new Score(80), new Score(80), new Score(80), null,

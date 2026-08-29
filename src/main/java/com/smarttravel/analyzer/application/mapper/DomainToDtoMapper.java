@@ -36,6 +36,10 @@ public class DomainToDtoMapper {
             explanations.explain(travelPackage, candidates),
             travelPackage.flight().offer().airline().name(),
             travelPackage.flight().offer().stops(),
+            logoDaCompanhia(travelPackage.flight().offer().airline().iataCode()),
+            horaTexto(travelPackage.flight().offer().departureTime()),
+            horaTexto(travelPackage.flight().offer().arrivalTime()),
+            duracaoTexto(travelPackage.flight().offer().totalDuration()),
             lodging.name(),
             lodging.neighborhood(),
             lodging.rating().average(),
@@ -53,6 +57,25 @@ public class DomainToDtoMapper {
      * e caia na pagina de busca, obrigando o usuario a procurar de novo o que ja tinhamos achado.
      * Para o voo nao existe link direto: a busca do parceiro e o melhor honesto.
      */
+    /** Logo pelo codigo IATA, servido pelo mesmo proxy das fotos. */
+    private static String logoDaCompanhia(String iata) {
+        if (iata == null || iata.isBlank() || "--".equals(iata)) return null;
+        return "/api/img?ref=" + java.net.URLEncoder.encode(
+            "https://images.kiwi.com/airlines/64/" + iata + ".png", java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private static String horaTexto(java.time.LocalTime hora) {
+        return hora == null ? null : hora.toString();
+    }
+
+    /** "8h 40min" em vez de PT8H40M, que nao diz nada para quem le. */
+    private static String duracaoTexto(java.time.Duration duracao) {
+        if (duracao == null) return null;
+        long horas = duracao.toHours();
+        long minutos = duracao.toMinutesPart();
+        return minutos == 0 ? horas + "h" : horas + "h " + minutos + "min";
+    }
+
     /** A foto passa pelo proxy do backend: hotlink no CDN deles e bloqueado por referer. */
     private static String imagem(com.smarttravel.analyzer.domain.model.lodging.LodgingOffer lodging) {
         if (!lodging.hasImage()) return null;

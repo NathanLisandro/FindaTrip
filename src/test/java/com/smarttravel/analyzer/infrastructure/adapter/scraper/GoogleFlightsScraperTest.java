@@ -69,6 +69,27 @@ class GoogleFlightsScraperTest {
         assertThat(casal.rawFare().amount()).isEqualByComparingTo(sozinho.rawFare().amount().multiply(java.math.BigDecimal.TWO));
     }
 
+    @Test void readsDepartureAndArrivalTimes() {
+        // Sem horario o usuario nao sabe se sai de madrugada nem se chega a tempo do check-in.
+        var primeiro = offers().getFirst();
+        assertThat(primeiro.departureTime()).isNotNull();
+        assertThat(primeiro.arrivalTime()).isNotNull();
+        assertThat(offers()).anySatisfy(offer ->
+            assertThat(offer.departureTime()).isEqualTo(java.time.LocalTime.of(6, 20)));
+        assertThat(offers()).anySatisfy(offer ->
+            assertThat(offer.arrivalTime()).isEqualTo(java.time.LocalTime.of(15, 0)));
+    }
+
+    @Test void readsTheTotalDurationOfTheItinerary() {
+        assertThat(offers()).anySatisfy(offer ->
+            assertThat(offer.totalDuration()).isEqualTo(java.time.Duration.ofHours(8).plusMinutes(40)));
+    }
+
+    @Test void everyOfferKeepsTheCarrierCodeSoTheLogoCanBeShown() {
+        assertThat(offers()).anySatisfy(offer -> assertThat(offer.airline().iataCode()).isEqualTo("G3"));
+        assertThat(offers()).anySatisfy(offer -> assertThat(offer.airline().iataCode()).isEqualTo("LA"));
+    }
+
     @Test void declaresItselfAsRealDataNotDemo() {
         assertThat(new GoogleFlightsScraper(null, null).isDemo()).isFalse();
     }

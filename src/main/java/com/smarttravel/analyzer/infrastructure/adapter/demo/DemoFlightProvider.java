@@ -24,7 +24,10 @@ public class DemoFlightProvider implements FlightProviderPort {
             boolean direct = index % 2 == 0;
             var fare = money(420 + random.nextInt(680));
             offers.add(new FlightOffer("demo-fl-" + index, airline, fare, money(60 + random.nextInt(60)),
-                money(70 + random.nextInt(50)), legs(criteria, direct), 0.75 + random.nextDouble() * 0.24));
+                money(70 + random.nextInt(50)), legs(criteria, direct), 0.75 + random.nextDouble() * 0.24,
+                java.time.LocalTime.of(6 + index * 2, index % 2 == 0 ? 20 : 45),
+                java.time.LocalTime.of(9 + index * 2, index % 2 == 0 ? 55 : 10),
+                java.time.Duration.ofMinutes(direct ? 95 : 215)));
         }
         return List.copyOf(offers);
     }

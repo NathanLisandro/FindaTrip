@@ -24,7 +24,8 @@ class PackageAssemblerDomainServiceTest {
 
     private static FlightOffer flight(String id, String fare) {
         return new FlightOffer(id, new Airline("G3", "GOL"), Money.brl(fare), Money.brl("90.00"), Money.brl("60.00"),
-            List.of(new FlightLeg(new Location("CWB", "Curitiba", "BR"), new Location("REC", "Recife", "BR"), null, false, false)), .9);
+            List.of(new FlightLeg(new Location("CWB", "Curitiba", "BR"), new Location("REC", "Recife", "BR"), null, false, false)), .9,
+            java.time.LocalTime.of(8, 0), java.time.LocalTime.of(11, 30), java.time.Duration.ofMinutes(210));
     }
 
     /** O segundo argumento e a diaria; o record guarda o total da estadia. */
