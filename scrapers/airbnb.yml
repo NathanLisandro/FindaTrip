@@ -1,9 +1,11 @@
 nome: airbnb
 tipo: spa
 url_busca: "https://www.airbnb.com.br/s/{cidade}/homes?checkin={entrada}&checkout={saida}&adults={adultos}"
-espera: "[itemprop='itemListElement']"
+espera: "[data-testid='card-container']"
 rate_limit_ms: 6000
 seletores:
-  card: "[itemprop='itemListElement']"
+  card: "[data-testid='card-container']"
+  nome: "[data-testid='listing-card-name']"
+  titulo: "[data-testid='listing-card-title']"
 _meta:
   verificado_em: 2026-08-29

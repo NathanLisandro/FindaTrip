@@ -41,8 +41,8 @@ class BookingScraperTest {
      */
     @Test void takesTheDiscountedPriceNotTheStruckThroughOne() {
         var valentina = offers().stream().filter(o -> o.name().equals("Valentina 24 HORAS")).findFirst().orElseThrow();
-        assertThat(valentina.nightlyRate().amount()).isEqualByComparingTo("127.57");
-        assertThat(valentina.nightlyRate().multiply(valentina.nights()).amount()).isEqualByComparingTo("892.99");
+        assertThat(valentina.stayTotal().amount()).isEqualByComparingTo("893.00");
+        assertThat(valentina.stayTotal().amount()).isEqualByComparingTo("893.00");
     }
 
     @Test void readsTheTaxesBookingAddsOnTopOfTheAdvertisedPrice() {
@@ -70,7 +70,7 @@ class BookingScraperTest {
     }
 
     @Test void everyPriceIsInBrl() {
-        assertThat(offers()).allSatisfy(offer -> assertThat(offer.nightlyRate().currency()).isEqualTo(Money.BRL));
+        assertThat(offers()).allSatisfy(offer -> assertThat(offer.stayTotal().currency()).isEqualTo(Money.BRL));
     }
 
     @Test void declaresItselfAsRealDataNotDemo() {

@@ -10,18 +10,25 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 
-public class BookingScraper implements LodgingProviderPort {
+public class AirbnbScraper implements LodgingProviderPort {
 
-    private static final String SITE = "booking";
+    private static final String SITE = "airbnb";
     private static final Path SCRAPERS = Path.of("scrapers");
+
+    /** "6x R$ 461" e parcelamento, nao diaria: some antes de procurar o total. */
+    private static final Pattern INSTALLMENT = Pattern.compile("\\d+\\s*x\\s*R\\$\\s*[\\d.,]+");
+    /** "4,92 (88)" — nota e numero de avaliacoes. */
+    private static final Pattern RATING = Pattern.compile("(\\d+(?:,\\d+)?)\\s*\\((\\d+)\\)");
+    private static final Money ZERO = new Money(BigDecimal.ZERO, Money.BRL);
 
     private final PageFetcherPort fetcher;
     private final SiteConfig config;
 
-    public BookingScraper(PageFetcherPort fetcher, SiteConfig config) {
+    public AirbnbScraper(PageFetcherPort fetcher, SiteConfig config) {
         this.fetcher = fetcher;
         this.config = config == null ? new SiteConfigLoader().load(SCRAPERS).get(SITE) : config;
     }
@@ -49,38 +56,35 @@ public class BookingScraper implements LodgingProviderPort {
     }
 
     private Optional<LodgingOffer> toOffer(Element card, int index, int nights) {
-        var total = BrazilianText.money(text(card, "preco"));
-        if (total.isEmpty()) return Optional.empty();   // card sem preco nao derruba a lista
-
-        var name = text(card, "nome");
+        var name = text(card, config.selector("nome"));
         if (name == null || name.isBlank()) return Optional.empty();
 
-        var score = text(card, "nota");
-        var rating = new HotelRating(BrazilianText.decimal(score).orElse(0), BrazilianText.integer(score).orElse(0));
-
         var body = card.text();
+        // Sem o parcelamento, o ultimo valor e o total ja com desconto ("Total: R$ 3.116 R$ 2.766").
+        var total = BrazilianText.money(INSTALLMENT.matcher(body).replaceAll(" "));
+        if (total.isEmpty()) return Optional.empty();
+
         var amenities = EnumSet.noneOf(Amenity.class);
-        if (body.contains("Café da manhã incluído")) amenities.add(Amenity.BREAKFAST_INCLUDED);
-        if (body.contains("Cancelamento grátis")) amenities.add(Amenity.FREE_FLEXIBLE_CANCELLATION);
+        if (body.contains("Cancelamento gratuito")) amenities.add(Amenity.FREE_FLEXIBLE_CANCELLATION);
+        if (body.contains("Café da manhã")) amenities.add(Amenity.BREAKFAST_INCLUDED);
 
-        var taxes = BrazilianText.money(text(card, "taxas")).orElse(new Money(BigDecimal.ZERO, Money.BRL));
-        var zero = new Money(BigDecimal.ZERO, Money.BRL);
 
-        return Optional.of(new LodgingOffer("booking-" + index, name, neighborhood(card), total.get(), nights,
-            taxes, zero, zero, rating, Set.copyOf(amenities),
-            BrazilianText.decimal(text(card, "distancia")).orElse(0)));
+        // O Airbnb nao publica bairro no card: passar null vira "Nao informado" no dominio,
+        // que e a verdade. Deduzir bairro do titulo seria chute.
+        return Optional.of(new LodgingOffer("airbnb-" + index, name, null, total.get(), nights,
+            ZERO, ZERO, ZERO, rating(body), Set.copyOf(amenities), 0));
     }
 
-    /** "Campeche, Florianopolis" -> "Campeche". Sem virgula, nao ha bairro. */
-    private String neighborhood(Element card) {
-        var address = text(card, "endereco");
-        if (address == null) return null;
-        int comma = address.indexOf(',');
-        return comma > 0 ? address.substring(0, comma).trim() : null;
+    /** Anuncio novo nao tem nota. Zero avaliacoes e o que o rating bayesiano ja sabe tratar. */
+    private static HotelRating rating(String body) {
+        var matcher = RATING.matcher(body);
+        if (!matcher.find()) return new HotelRating(0, 0);
+        return new HotelRating(Double.parseDouble(matcher.group(1).replace(',', '.')),
+                               Integer.parseInt(matcher.group(2)));
     }
 
-    private String text(Element card, String selectorKey) {
-        var found = card.selectFirst(config.selector(selectorKey));
+    private static String text(Element card, String selector) {
+        var found = card.selectFirst(selector);
         return found == null ? null : found.text();
     }
 }
